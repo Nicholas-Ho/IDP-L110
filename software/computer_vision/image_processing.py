@@ -2,15 +2,45 @@ import cv2
 import matplotlib.pyplot as plt
 from skimage.morphology import skeletonize
 from sklearn.cluster import AgglomerativeClustering
+import numpy as np
 
-# Parameters
+# ROI Parameters
+binary_thresh_r = 5
+g_lower = (0, 40, 0)
+g_upper = (60, 255, 60)
+
+# Junction Detection Parameters
 thresh_ratio = 3
 low_thresh = 50
 hi_thresh = thresh_ratio*low_thresh
+binary_thresh_j = 15
 
-binary_thresh = 15
+# Table Object Removal Parameters
+table_lower = (0, 40, 0)
+table_upper = (60, 255, 60)
+
+def remove_coloured_objects(img, lower, upper):
+    # Remove coloured objects on table
+    mask = cv2.inRange(img, lower, upper)
+    masked = cv2.bitwise_and(img,img, mask=mask)
+    plt.imshow(mask)
+    img = img - masked
+    return img
+
+def _process_img(img):
+    # Edge detection
+    img = cv2.Canny(img, low_thresh, hi_thresh)
+
+    # Blurring, Thresholding and Skeletonization
+    img = cv2.blur(img, (10,10))
+    ret, img = cv2.threshold(img, binary_thresh_j, 255, cv2.THRESH_BINARY)
+    img = skeletonize(img//255).astype(int)
+
+    return img
 
 def find_junctions(img):
+    img = _process_img(img)
+
     max_val = img.max()
     img = img//max_val
 
@@ -34,7 +64,7 @@ def find_junctions(img):
                     junctions.append((j,i))
 
     # Clustering
-    ward = AgglomerativeClustering(n_clusters=None, linkage='ward', distance_threshold=10)
+    ward = AgglomerativeClustering(n_clusters=None, linkage='ward', distance_threshold=50)
     labels = ward.fit_predict(junctions)
     clusters = {}
     for junction, label in zip(junctions, labels):
@@ -47,38 +77,39 @@ def find_junctions(img):
 
     return junctions
 
-def process_img(img):
-    # Edge detection
-    processed_img = cv2.Canny(img, low_thresh, hi_thresh)
+def get_roi(img):
+    # Remove green objects on table
+    img = remove_coloured_objects(img, g_lower, g_upper)
 
-    # # Experiment 1: Hough Lines
-    # # Line detection
-    # lines = cv2.HoughLinesP(processed_img, 1, np.pi/180, 50, minLineLength=50,maxLineGap=20)
+    # Find table contours
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    ret, bin_img = cv2.threshold(img, binary_thresh_r, 255, cv2.THRESH_BINARY_INV)
+    contours, hierarchy = cv2.findContours(bin_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    table_contour = max(contours, key=lambda x: len(x))
+    roi = cv2.drawContours(np.zeros(img.shape, dtype=np.uint8), [table_contour], 0, (255, 255, 255), -1)
 
-    # # Draw lines
-    # for line in lines:
-    #     x1,y1,x2,y2 = line[0]
-    #     cv2.line(processed_img,(x1,y1),(x2,y2),(255,255,0),2)
+    # plt.imshow(roi)
+    # plt.show()
 
-    # Experiment 2: Blurring, Thresholding and Skeletonization
-    processed_img = cv2.blur(processed_img, (10,10))
-    ret, processed_img = cv2.threshold(processed_img, binary_thresh, 255, cv2.THRESH_BINARY)
-    processed_img = skeletonize(processed_img//255).astype(int)*255
+    return roi
 
-    # Find junctions
-    junctions = find_junctions(processed_img)
-    for junction in junctions:
-        processed_img = cv2.circle(processed_img, junction, radius=5, color=(255, 255, 255), thickness=-1)
+# img_path = 'sample_picture_bright_20.01.2023.png'
+img_path = 'sample_picture_dark_19.01.2023.png'
 
-    return processed_img
+img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-
-img = cv2.imread('sample_picture_dark_19.01.2023.png', cv2.IMREAD_GRAYSCALE)
-
-# plt.imshow(img, cmap='gray')
+# plt.imshow(img)
 # plt.show()
 
-processed_img = process_img(img)
+roi = get_roi(img)
+processed_img = cv2.bitwise_and(img, img, mask=roi)
+processed_img = remove_coloured_objects(processed_img, table_lower, table_upper)
 
-plt.imshow(processed_img, cmap='gray')
+# Find junctions
+junctions = find_junctions(img)
+for junction in junctions:
+    img = cv2.circle(img, junction, radius=15, color=(255, 0, 0), thickness=-1)
+
+plt.imshow(img)
 plt.show()
