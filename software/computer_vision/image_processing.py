@@ -4,28 +4,12 @@ from skimage.morphology import skeletonize
 from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 
-# ROI Parameters
-binary_thresh_r = 5
-g_lower = (0, 40, 0)
-g_upper = (60, 255, 60)
-
 # Junction Detection Parameters
 thresh_ratio = 3
 low_thresh = 50
 hi_thresh = thresh_ratio*low_thresh
 binary_thresh_j = 15
 
-# Table Object Removal Parameters
-table_lower = (0, 40, 0)
-table_upper = (60, 255, 60)
-
-def remove_coloured_objects(img, lower, upper):
-    # Remove coloured objects on table
-    mask = cv2.inRange(img, lower, upper)
-    masked = cv2.bitwise_and(img,img, mask=mask)
-    plt.imshow(mask)
-    img = img - masked
-    return img
 
 def _process_img(img):
     # Edge detection
@@ -77,21 +61,6 @@ def find_junctions(img):
 
     return junctions
 
-def get_roi(img):
-    # Remove green objects on table
-    img = remove_coloured_objects(img, g_lower, g_upper)
-
-    # Find table contours
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    ret, bin_img = cv2.threshold(img, binary_thresh_r, 255, cv2.THRESH_BINARY_INV)
-    contours, hierarchy = cv2.findContours(bin_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    table_contour = max(contours, key=lambda x: len(x))
-    roi = cv2.drawContours(np.zeros(img.shape, dtype=np.uint8), [table_contour], 0, (255, 255, 255), -1)
-
-    # plt.imshow(roi)
-    # plt.show()
-
-    return roi
 
 # img_path = 'sample_picture_bright_20.01.2023.png'
 img_path = 'sample_picture_dark_19.01.2023.png'
@@ -101,10 +70,6 @@ img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 # plt.imshow(img)
 # plt.show()
-
-roi = get_roi(img)
-processed_img = cv2.bitwise_and(img, img, mask=roi)
-processed_img = remove_coloured_objects(processed_img, table_lower, table_upper)
 
 # Find junctions
 junctions = find_junctions(img)
