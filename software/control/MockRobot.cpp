@@ -7,6 +7,7 @@ MockRobot::MockRobot(float x/*=0*/, float y/*=0*/, float angular_position/*=0*/)
     pos_x = x;
     pos_y = y;
     angular_p = angular_position;
+    
     // Calculate position of sensor relative to robot
     float s_pos = SENSOR_SPACING * 1.5;
     for(int i=0; i < 4; i++) {
@@ -36,15 +37,16 @@ void MockRobot::calculateVelocity() {
 }
 
 void MockRobot::getSensorReadings() {
-    // Calculate sensor positions (just y will do)
+    // Calculate sensor positions
     for(int i=0; i < 4; i++) {
         float angle = angular_p + sensor_angle[i];
         float sensor_y = pos_y + sensor_dist[i] * sin(angle);
         if(sensor_y <= (LINE_WIDTH/2) && sensor_y >= -(LINE_WIDTH/2)) {
-            readings[i] = 1;
+            lineReadings[i] = 1;
         } else {
-            readings[i] = 0;
+            lineReadings[i] = 0;
         }
     }
     // std::cout << readings[0] << readings[1] << readings[2] << readings[3] << "\n";
 }
+

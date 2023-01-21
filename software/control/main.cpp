@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     for(int i=0; i < (max_time/TIMESTEP); i++) {
         robot.simulateMovement();
         robot.getSensorReadings();
-        controller.control(robot.readings);
+        controller.control(robot.lineReadings, robot.irReadings);
         robot.calculateVelocity();
 
         robot.getPosition(x, y);

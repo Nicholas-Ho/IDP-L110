@@ -11,13 +11,14 @@ const float WHEEL_RADIUS = 0.02;
 const float SENSOR_DISTANCE = 0.02; // In front of robot
 const float SENSOR_SPACING = 0.015; // Between sensors
 
-const float TIMESTEP = 0.01; // Seconds
+const float TIMESTEP = 0.001; // Seconds
 
 class MockRobot {
     public:
         float leftMotor = 0;
         float rightMotor = 0;
-        int readings[4] = {-1, -1, -1, -1};
+        int lineReadings[4] = {-1, -1, -1, -1};
+        float irReadings[2] = {-1.0, -1.0};
 
         MockRobot(float x=0, float y=0, float angular_position=0);
 
