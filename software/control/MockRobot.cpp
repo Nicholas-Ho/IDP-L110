@@ -7,13 +7,13 @@ MockRobot::MockRobot(float x/*=0*/, float y/*=0*/, float angular_position/*=0*/)
     pos_x = x;
     pos_y = y;
     angular_p = angular_position;
-    
+
     // Calculate position of sensor relative to robot
-    float s_pos = SENSOR_SPACING * 1.5;
+    float s_pos = SENSOR_SPACING[0] + SENSOR_SPACING[1]/2;
     for(int i=0; i < 4; i++) {
         sensor_dist[i] = sqrt(pow(s_pos, 2) + pow(SENSOR_DISTANCE, 2));
         sensor_angle[i] = atan(s_pos/SENSOR_DISTANCE);
-        s_pos -= SENSOR_SPACING;
+        s_pos -= SENSOR_SPACING[i];
     }
 }
 

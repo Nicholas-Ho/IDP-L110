@@ -9,7 +9,7 @@ const float LINE_WIDTH = 0.019;
 const float ROBOT_RADIUS = 0.07;
 const float WHEEL_RADIUS = 0.02;
 const float SENSOR_DISTANCE = 0.02; // In front of robot
-const float SENSOR_SPACING = 0.015; // Between sensors
+const float SENSOR_SPACING[4] = {0.015, 0.009, 0.015, -1}; // Between sensors
 
 const float TIMESTEP = 0.001; // Seconds
 
@@ -18,7 +18,6 @@ class MockRobot {
         float leftMotor = 0;
         float rightMotor = 0;
         int lineReadings[4] = {-1, -1, -1, -1};
-        float irReadings[2] = {-1.0, -1.0};
 
         MockRobot(float x=0, float y=0, float angular_position=0);
 

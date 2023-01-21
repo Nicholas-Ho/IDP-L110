@@ -1,47 +1,117 @@
 #include "LineFollower.h"
 
-int LineFollower::control(int lineReadings[4], float irReadings[2]) {
+// For T-junction logic
+enum direction {straight, left, right, ERROR};
+
+// Helper stack function
+class Stack {
+    private:
+        int size = 0;
+        direction stack[3]; // Of size 3
+        const int max_size = 3;
+
+    public:
+        bool isEmpty() {
+            if(size > 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        int add(direction dir) {
+            if(size < max_size) {
+                stack[size] = dir;
+                size++;
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        direction pop() {
+            if(size > 0) {
+                size--;
+                return stack[size];
+            } else {
+                return ERROR;
+            }
+        }
+};
+
+int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
     int lineBinary = lineReadings[0]*8 + lineReadings[1]*4 + lineReadings[2]*2 + lineReadings[3];
-    int irBinary = irReadings[0]*2 + irReadings[1];
-
-    int res = 0;
-    res = detectEnd(lineBinary, irBinary);
-    if(res == 1) {return 1;}
-    res = detectJunction(lineBinary);
-    if(res == 1) {return 1;}
-    res = followLine(lineBinary);
-    return res;
+    if(activeFunc==nullptr) {
+        int res = -1;
+        res = detectEnd(lineBinary);
+        if(res == 0) {return 0;}
+        res = detectJunction(lineBinary);
+        if(res == 0) {return 0;}
+        res = followLine(lineBinary);
+        return res;
+    } else {
+        (this->*activeFunc)(lineBinary);
+    }
+    return -1;
 }
 
-int LineFollower::detectEnd(int lineBinary, int irBinary) {
+int LineFollower::detectEnd(int lineBinary) {
 
     if(lineBinary <= 0) { // [0 0 0 0]
 
-        if(irBinary >= 0) {
-            // TODO: Implement tunnel navigation
-        }
-
         // Turn 180 degrees
         // During turn, suspend control
-        return 1;
+        activeFunc = &turnAround;
+        return 0;
     }
 
-    return 0;
+    return -1;
 }
 
 int LineFollower::detectJunction(int lineBinary) {
-    if(lineBinary == 14) { // [1 1 1 0]
-        // Turn 90 degrees left
-        // During turn, suspend control
-        return 1;
+    // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
+    // came from from interferring
+    static Stack dirStack = Stack();
+
+    if(lineBinary == 15) { // [1 1 1 1]
+        if(dirStack.isEmpty() == true) {
+            // Visit the left branch, the right branch then continue down the path
+            dirStack.add(left);
+            dirStack.add(straight);
+            dirStack.add(right);
+        }
+
+        direction nextDir = dirStack.pop();
+        if(nextDir == left) {
+            // Turn 90 degrees to the left
+            activeFunc = &turnLeft;
+        } else if(nextDir == right) {
+            // Turn 90 degrees to the right
+            activeFunc = &turnRight;
+        } else if(nextDir == straight) {
+            // Move straight for a second (suspend control!)
+            activeFunc = &moveStraight;
+        }
+    } else if(lineBinary == 14) { // [1 1 1 0]
+        // Move forward a tiny bit to ensure that it isn't a two-way junction
+        activeFunc = &probeJunction;
+        // If only one branch, turn 90 degrees to the left
+        // If two branches, move to two-branch logic
+        activeFunc = &turnLeft;
+        dirStack.add(left);
+        return 0;
     } else if(lineBinary == 7) { // [0 1 1 1]
-        // Turn 90 degrees right
-        // During turn, suspend control
-        return 1;
+        // Move forward a tiny bit to ensure that it isn't a two-way junction
+        activeFunc = &probeJunction;
+        // If only one branch, turn 90 degrees to the right
+        // If two branches, move to two-branch logic
+        activeFunc = &turnRight;
+        dirStack.add(right);
+        return 0;
     }
 
-    return 0;
+    return -1;
 }
 
 int LineFollower::followLine(int lineBinary) {
@@ -93,5 +163,54 @@ int LineFollower::followLine(int lineBinary) {
     leftMotor -= kp * error;
     rightMotor += kp * error;
 
-    return 1;
+    return 0;
+}
+
+int LineFollower::turnLeft(int _) {
+    // TODO: Turn 90 degrees to the left
+    moveStraight(_);
+    return 0;
+}
+
+int LineFollower::turnRight(int _) {
+    // TODO: Turn 90 degrees to the right
+    moveStraight(_);
+    return 0;
+}
+
+int LineFollower::turnAround(int _) {
+    // TODO: Turn 180 degrees
+    return 0;
+}
+
+int LineFollower::moveStraight(int _) {
+    static int count = 0;
+    static const int max_count = 10; // TODO: Tune the duration of the movement
+
+    if(count == max_count) {
+        count = 0;
+        activeFunc = nullptr;
+        return 0;
+    } else {
+        leftMotor = basePower;
+        rightMotor = basePower;
+        count++;
+        return 0;
+    }
+}
+
+int LineFollower::probeJunction(int lineBinary) {
+    static int count = 0;
+    static const int max_count = 10; // TODO: Tune the duration of the probe
+
+    if(lineBinary == 15 || count == max_count) {
+        count = 0;
+        activeFunc = nullptr;
+        return 0;
+    } else {
+        leftMotor = basePower / 3;
+        rightMotor = basePower / 3;
+        count++;
+        return 0;
+    }
 }

@@ -15,7 +15,10 @@ int main(int argc, char** argv) {
     std::ofstream OutFile("output.csv");
 
     MockRobot robot = MockRobot(initial_x, initial_y, initial_th);
-    LineFollower controller = LineFollower(robot.leftMotor, robot.rightMotor);
+    LineFollower controller = LineFollower(
+        robot.leftMotor,
+        robot.rightMotor
+        );
 
     int max_time = 10; // Seconds
 
@@ -24,7 +27,7 @@ int main(int argc, char** argv) {
     for(int i=0; i < (max_time/TIMESTEP); i++) {
         robot.simulateMovement();
         robot.getSensorReadings();
-        controller.control(robot.lineReadings, robot.irReadings);
+        controller.control(robot.lineReadings);
         robot.calculateVelocity();
 
         robot.getPosition(x, y);

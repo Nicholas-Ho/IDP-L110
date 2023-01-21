@@ -5,7 +5,7 @@ class LineFollower {
 
     public:
         LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
-        int control(int lineReadings[4], float irReadings[2]);
+        int control(int lineReadings[4]);
 
     private:
         float& leftMotor;
@@ -14,9 +14,17 @@ class LineFollower {
         float kp = 0.05; // In proportion of maximum power
         float basePower = 0.5; // Base power (before correction)
 
-        int detectEnd(int lineBinary, int irBinary);
+        int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
+
+        int detectEnd(int lineBinary);
         int detectJunction(int lineBinary);
         int followLine(int lineBinary);
+
+        int turnLeft(int lineBinary);
+        int turnRight(int lineBinary);
+        int turnAround(int lineBinary);
+        int moveStraight(int lineBinary);
+        int probeJunction(int lineBinary);
 
 };
 
