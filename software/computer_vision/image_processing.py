@@ -17,6 +17,8 @@ red_hi_1 = (5,255,255)
 red_low_2 = (175,75,150)
 red_hi_2 = (180,255,255)
 
+cyan_low = (160, 70, 50)
+cyan_high = (200, 255, 255)
 
 def _process_img(img):
     # Blurring to smear non-targets
@@ -66,24 +68,27 @@ def find_junctions(img):
     return junctions
 
 def find_red(img):
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    ret, rgb_img = cv2.threshold(rgb_img, 25, 255, 0)
-    contours, hierarchy = cv2.findContours(rgb_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    objects = cv2.drawContours(np.zeros(img.shape, dtype=np.uint8), contours, -1, (255, 255, 255), 2)
-    plt.imshow(objects)
-    plt.show()
+    #Cropping left side of image to isolate junctions with block
+    zoomed_img = img[50:700, 200:400]
+    #Inverting the image and looking for the colour cyan -- same as looking for red in non-inverted space
+    hsv_img = cv2.cvtColor(zoomed_img, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv_img, cyan_low, cyan_high)
 
-    # Convert to HSV
-    hsv_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    mask1 = cv2.inRange(hsv_img, red_low_1, red_hi_1)
-    mask2 = cv2.inRange(hsv_img, red_low_2, red_hi_2)
+    #Looking for the largest cyan contour -- this should correspond to the block
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if len(contours) > 0:
+        max_contour = max(contours, key=cv2.contourArea)
+        x,y,w,h = cv2.boundingRect(max_contour)
+        cv2.rectangle(zoomed_img,(x,y),(x+w,y+h),(0,255,0),2)
+        cv2.putText(zoomed_img, "Red Block", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
-    mask = cv2.bitwise_or(mask1, mask2)
-    mask = cv2.bitwise_and(mask1, objects)
-    plt.imshow(mask)
-    plt.show()
+    #Converting back to BGR space
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-    
+    cv2.imshow("Mask", img)
+    cv2.waitKey(0)
+
+
 
 # img_path = 'sample_picture_bright_20.01.2023.png'
 # img_path = 'sample_picture_dark_19.01.2023.png'
@@ -93,11 +98,11 @@ img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 # Find junctions
-junctions = find_junctions(img)
-for junction in junctions:
-    img = cv2.circle(img, junction, radius=15, color=(255, 0, 0), thickness=-1)
+# junctions = find_junctions(img)
+# for junction in junctions:
+#     img = cv2.circle(img, junction, radius=15, color=(255, 0, 0), thickness=-1)
 
-# find_red(img)
+find_red(img)
 
-plt.imshow(img)
-plt.show()
+# plt.imshow(img)
+# plt.show()
