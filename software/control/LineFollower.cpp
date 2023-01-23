@@ -1,4 +1,5 @@
 #include "LineFollower.h"
+#include <algorithm>
 
 // For T-junction logic
 enum direction {straight, left, right, ERROR};
@@ -162,6 +163,10 @@ int LineFollower::followLine(int lineBinary) {
     // Based on the error, do some proportional control
     leftMotor -= kp * error;
     rightMotor += kp * error;
+
+    // Ensure that we're not trying to power the motors beyond their maximum
+    leftMotor = std::max((float)-1, std::min((float)1, leftMotor));
+    rightMotor = std::max((float)-1, std::min((float)1, rightMotor));
 
     return 0;
 }
