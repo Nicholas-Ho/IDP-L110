@@ -5,6 +5,14 @@ from sklearn.cluster import AgglomerativeClustering
 from scipy.ndimage import convolve
 import numpy as np
 
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('camera', default=1, type=int)
+args = parser.parse_args()
+
+
 # Junction Detection Parameters
 thresh_ratio = 3
 low_thresh = 50
@@ -15,7 +23,25 @@ binary_thresh_j = 15
 cyan_low = (160, 70, 50)
 cyan_high = (200, 255, 255)
 
-crop = {'y': (50, 700), 'x': (200, 400)}
+# Block Detection Settings for Cameras (each camera has a different resolution)
+camera = args.camera # 1 or 2
+
+# Camera 1
+crop_1 = {'y': (50, 700), 'x': (200, 400)}
+size_thresh_1 = 100
+
+# Camera 2
+crop_2 = {'y': (50, 700), 'x': (200, 400)}
+size_thresh_2 = 100
+
+if camera == 1:
+    crop = crop_1
+    size_thresh = size_thresh_1
+else:
+    crop = crop_2
+    size_thresh = size_thresh_2
+
+
 
 def _process_img(img):
     # Blurring to smear non-targets
@@ -74,16 +100,16 @@ def find_red(img):
 
     # Looking for the largest cyan contour -- this should correspond to the block
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    if len(contours) > 0:
-        max_contour = max(contours, key=cv2.contourArea)
-
-        # Find centre of contour
-        M = cv2.moments(max_contour)
-        if M['m00'] != 0:
-            cx = int(M['m10']/M['m00']) + crop['x'][0] # Converting coordinates back to uncropped
-            cy = int(M['m01']/M['m00']) + crop['y'][0]
-
-    return (cx, cy), max_contour
+    output = []
+    for contour in contours:
+        if cv2.contourArea(contour) > size_thresh:
+            # Find centre of contour
+            M = cv2.moments(contour)
+            if M['m00'] != 0:
+                cx = int(M['m10']/M['m00']) + crop['x'][0] # Converting coordinates back to uncropped
+                cy = int(M['m01']/M['m00']) + crop['y'][0]
+            output.append({'centre': (cx, cy), 'contour': contour})
+    return output
 
 def find_block_junctions(junctions, blocks):
     def euclidean_dist(pt1, pt2):
@@ -91,11 +117,12 @@ def find_block_junctions(junctions, blocks):
 
     block_junctions = []
     for block in blocks:
-        block_junctions.append((min(junctions, key=lambda x: euclidean_dist(x, block)), block)) # (junction, block)
+        block_junctions.append((min(junctions, key=lambda x: euclidean_dist(x, block['centre'])), block)) # (junction, block)
 
     return block_junctions
 
 
+# Some of the images are saved as half-resolution for some reason? Investigate
 img_path = 'sample_picture_block1_20.01.2023.png'
 
 img = cv2.imread(img_path, cv2.IMREAD_COLOR)
@@ -104,21 +131,22 @@ img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # Find junctions
 junctions = find_junctions(img)
 
-# Draw junctions
-for junction in junctions:
-    img = cv2.circle(img, junction, radius=5, color=(255, 0, 0), thickness=-1)
+# #  Draw junctions
+# for junction in junctions:
+#     img = cv2.circle(img, junction, radius=5, color=(255, 0, 0), thickness=-1)
 
 # Detect red block
-block_centre, contour = find_red(img)
+blocks = find_red(img)
 
 # Draw red block
-x,y,w,h = cv2.boundingRect(contour)
-zoomed_img = img[crop['y'][0]:crop['y'][1], crop['x'][0]:crop['x'][1]]
-cv2.rectangle(zoomed_img,(x,y),(x+w,y+h),(0,255,0),2)
-cv2.putText(zoomed_img, "Red Block", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+for block in blocks:
+    x,y,w,h = cv2.boundingRect(block['contour'])
+    zoomed_img = img[crop['y'][0]:crop['y'][1], crop['x'][0]:crop['x'][1]]
+    cv2.rectangle(zoomed_img,(x,y),(x+w,y+h),(0,255,0),2)
+    cv2.putText(zoomed_img, "Red Block", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
 # Find junctions closest to the block
-block_junctions = find_block_junctions(junctions, [block_centre])
+block_junctions = find_block_junctions(junctions, blocks)
 
 # Draw junctions
 for junction in block_junctions:
