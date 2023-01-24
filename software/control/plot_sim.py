@@ -20,6 +20,8 @@ line_width = 0.019
 
 sim_df = pd.read_csv('output.csv', header=None, names=["X", "Y"])
 
+plt.title('Line Following Algorithm Modeling')
+
 # Plot path of centroid
 plt.plot(sim_df["X"], sim_df["Y"])
 
