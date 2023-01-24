@@ -1,4 +1,4 @@
-#include "LineFollower.h"
+#include "LineFollower.h" // Copy from folder ../MotorControl for testing
 #include "MockRobot.h"
 #include <string>
 #include <iostream>

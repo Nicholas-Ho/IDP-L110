@@ -1,6 +1,5 @@
 #include <Adafruit_MotorShield.h>
 #include "LineFollower.h"
-#include "MockRobot.h"
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
