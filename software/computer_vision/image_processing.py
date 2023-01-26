@@ -31,7 +31,7 @@ crop_1 = {'y': (50, 700), 'x': (200, 400)}
 size_thresh_1 = 100
 
 # Camera 2
-crop_2 = {'y': (50, 700), 'x': (200, 400)}
+crop_2 = {'y': (50, 700), 'x': (150, 350)}
 size_thresh_2 = 100
 
 if camera == 1:
@@ -93,7 +93,7 @@ def find_junctions(img):
 def find_red(img):
     # Cropping left side of image to isolate junctions with block
     zoomed_img = img[crop['y'][0]:crop['y'][1], crop['x'][0]:crop['x'][1]]
-
+    
     # Inverting the image and looking for the colour cyan -- same as looking for red in non-inverted space
     hsv_img = cv2.cvtColor(zoomed_img, cv2.COLOR_RGB2HSV)
     mask = cv2.inRange(hsv_img, cyan_low, cyan_high)
@@ -123,7 +123,7 @@ def find_block_junctions(junctions, blocks):
 
 
 # Some of the images are saved as half-resolution for some reason? Investigate
-img_path = 'sample_picture_block1_20.01.2023.png'
+img_path = 'sample_picture_block2_25.01.2023.png'
 
 img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
