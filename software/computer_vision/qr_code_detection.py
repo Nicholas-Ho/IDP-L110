@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 
 def detect_qr(img):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    ret, img = cv2.threshold(img, 220, 255, cv2.THRESH_BINARY)
+    ret, img = cv2.threshold(img, 240, 255, cv2.THRESH_BINARY)
+    img = cv2.GaussianBlur(img, (3, 3), 0)
     cv2.imshow("Mask", img)
     cv2.waitKey(0)
     detector = cv2.QRCodeDetector()
