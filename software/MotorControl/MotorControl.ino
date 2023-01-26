@@ -18,8 +18,11 @@ float leftMotorProportion, rightMotorProportion;
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
 
-uint8_t maxPower = 255;
-int lineReadings[4] = {1, 0, 0, 0};
+uint8_t maxPower = 220; // 255 is too much
+
+//Assign line sensor pins (left to right)
+int linePins[4] = {4, 5, 6, 7};
+int lineReadings[4] = {0, 0, 0, 0};
 
 void setup() 
 {
@@ -41,17 +44,34 @@ void setup()
 
   controller.turnLeft(0);
 
+  // Setup line sensors
+  pinMode(linePins[0], INPUT);
+  pinMode(linePins[1], INPUT);
+  pinMode(linePins[2], INPUT);
+  pinMode(linePins[3], INPUT);
+
 }
 
 void loop() 
 { 
+  String readingPrint = "";
+  // Read line sensors
+  for(int i=0; i < 3; i++) {
+    lineReadings[i] = digitalRead(linePins[i]);
+    readingPrint += String(lineReadings[i]) + " ";
+  }
+  lineReadings[3] = 0;
+  readingPrint += String(lineReadings[3])
+
+  Serial.println(readingPrint);
+
   //Main control system function
   if (!lineReadings)
   {
     Serial.println("Error: Line Readings not available");
     while(1);
   }
-  //controller.control(lineReadings); //left and right motor proportions are set now
+  controller.control(lineReadings); //left and right motor proportions are set now
   
   //Protecting against invalid motor proportions that would cause motor speeds to exceed the max
   if (leftMotorProportion > 1.0)  {leftMotorProportion = 1;}
@@ -65,17 +85,19 @@ void loop()
   int leftMotorSpeed = (int) (fabs(leftMotorProportion)*maxPower);
   int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
 
-  // Serial.println("Left Motor Proportion: ");
-  // Serial.println(leftMotorProportion);
-  // Serial.println("Left Motor Speed:");
-  // Serial.println(leftMotorSpeed);
-  // Serial.println("Left Motor Sign: ");
-  // Serial.println(leftSign);
-  // Serial.println("\n");
+  Serial.println("Left Motor Proportion: ");
+  Serial.println(leftMotorProportion);
+  Serial.println("Left Motor Speed:");
+  Serial.println(leftMotorSpeed);
+  Serial.println("Left Motor Sign: ");
+  Serial.println(leftSign);
+  Serial.println("\n");
   
   //Setting the magnitude of the motor speeds
   leftMotor->setSpeed(leftMotorSpeed);
   rightMotor->setSpeed(rightMotorSpeed);
+  // leftMotor->setSpeed(0);
+  // rightMotor->setSpeed(0);
 
   //Using the sign of the motor proportion to set the direction of motion for each wheel
   switch(leftSign)
