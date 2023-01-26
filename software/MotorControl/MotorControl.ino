@@ -16,10 +16,10 @@ Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 float leftMotorProportion, rightMotorProportion;
 
 //Instantiate a controller object, passing in references to the left and right motor objects
-LineFollower controller = LineFollower(&leftMotorProportion, &rightMotorProportion);
+LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
 
 uint8_t maxPower = 255;
-int lineReadings[4];
+int lineReadings[4] = {1, 0, 0, 0};
 
 void setup() 
 {
@@ -28,16 +28,18 @@ void setup()
   if (!motor_shield.begin())  
   {
 
-    Serial.println("Could not find motors.")
+    Serial.println("Could not find motors.");
     
   }  
   else 
   {
-    Serial.println("Motors online.")
+    Serial.println("Motors online.");
   }
 
   leftMotor->run(RELEASE);
   rightMotor->run(RELEASE);
+
+  controller.turnLeft(0);
 
 }
 
@@ -49,23 +51,28 @@ void loop()
     Serial.println("Error: Line Readings not available");
     while(1);
   }
-  controller.control(lineReadings); //left and right motor proportions are set now
-
-  //Protecting against overflow of the 8-bit motor speeds
-  if (leftMotorProportion > 1.0 || rightMotorProportion > 1.0)
-  {
-    Serial.println("Invalid control system input");
-    while(1);
-  }
+  //controller.control(lineReadings); //left and right motor proportions are set now
+  
+  //Protecting against invalid motor proportions that would cause motor speeds to exceed the max
+  if (leftMotorProportion > 1.0)  {leftMotorProportion = 1;}
+  if (rightMotorProportion > 1.0) {rightMotorProportion = 1;}
 
   //Keeping track of travel direction before taking the magnitude of the motor proportions
   bool leftSign = leftMotorProportion >= 0 ? 1 : 0; //1 corresponds to a positive speed (forwards) and 0 to a negative speed (backwards)
   bool rightSign = rightMotorProportion >= 0 ? 1: 0;
 
-  //Setting the motor speeds based on proportions
-  uint8_t leftMotorSpeed = (uint8_t) abs(leftMotorProportion)*maxPower;
-  uint8_t rightMotorSpeed = (uint8_t) abs(rightMotorProportion)*maxPower; 
+  // //Setting the motor speeds based on proportions
+  int leftMotorSpeed = (int) (fabs(leftMotorProportion)*maxPower);
+  int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
 
+  // Serial.println("Left Motor Proportion: ");
+  // Serial.println(leftMotorProportion);
+  // Serial.println("Left Motor Speed:");
+  // Serial.println(leftMotorSpeed);
+  // Serial.println("Left Motor Sign: ");
+  // Serial.println(leftSign);
+  // Serial.println("\n");
+  
   //Setting the magnitude of the motor speeds
   leftMotor->setSpeed(leftMotorSpeed);
   rightMotor->setSpeed(rightMotorSpeed);

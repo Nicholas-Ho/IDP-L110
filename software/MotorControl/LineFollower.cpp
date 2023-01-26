@@ -1,8 +1,10 @@
 #include "LineFollower.h"
-// #include <algorithm>
 
 // For T-junction logic
 enum direction {straight, left, right, ERROR};
+
+const float wheelSpan; //Distance between wheels
+const float wheelRadius;
 
 // Helper stack function
 class Stack {
@@ -39,6 +41,17 @@ class Stack {
             }
         }
 };
+
+//Helper functions
+float max(float a, float b)
+{
+  return a >= b ? a : b;  
+}
+
+float min(float a, float b)
+{
+  return a <= b ? a : b;  
+}
 
 int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
@@ -165,14 +178,27 @@ int LineFollower::followLine(int lineBinary) {
     rightMotor += kp * error;
 
     // Ensure that we're not trying to power the motors beyond their maximum
-    leftMotor = std::max((float)-1, std::min((float)1, leftMotor));
-    rightMotor = std::max((float)-1, std::min((float)1, rightMotor));
+    leftMotor = max((float)-1, min((float)1, leftMotor));
+    rightMotor = max((float)-1, min((float)1, rightMotor));
 
     return 0;
 }
 
 int LineFollower::turnLeft(int _) {
-    // TODO: Turn 90 degrees to the left
+
+    //Setting motors to turn left
+    leftMotor = -basePower;
+    rightMotor = basePower;
+
+    // //TODO: Interrupt control to get RPM from rotary encoder
+    // float wheelAngularSpeed = 10;
+
+    // //Calculating duration of 90 degree turn
+    // float angularVelocity = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
+    // float turningTime = 3.141/angularVelocity;
+
+    // while ((millis() - start_time) < turningTime) {}
+
     moveStraight(_);
     return 0;
 }
