@@ -94,10 +94,10 @@ void loop()
   Serial.println("\n");
   
   //Setting the magnitude of the motor speeds
-  leftMotor->setSpeed(leftMotorSpeed);
-  rightMotor->setSpeed(rightMotorSpeed);
-  // leftMotor->setSpeed(0);
-  // rightMotor->setSpeed(0);
+  // leftMotor->setSpeed(leftMotorSpeed);
+  // rightMotor->setSpeed(rightMotorSpeed);
+  leftMotor->setSpeed(0);
+  rightMotor->setSpeed(0);
 
   //Using the sign of the motor proportion to set the direction of motion for each wheel
   switch(leftSign)
