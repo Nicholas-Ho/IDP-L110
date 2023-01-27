@@ -52,18 +52,16 @@ void setup()
 
 }
 
+int printCounter = 0;
+
 void loop() 
 { 
   String readingPrint = "";
   // Read line sensors
-  for(int i=0; i < 3; i++) {
+  for(int i=0; i < 4; i++) {
     lineReadings[i] = digitalRead(linePins[i]);
     readingPrint += String(lineReadings[i]) + " ";
   }
-  lineReadings[3] = 0;
-  readingPrint += String(lineReadings[3])
-
-  Serial.println(readingPrint);
 
   //Main control system function
   if (!lineReadings)
@@ -85,13 +83,19 @@ void loop()
   int leftMotorSpeed = (int) (fabs(leftMotorProportion)*maxPower);
   int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
 
-  Serial.println("Left Motor Proportion: ");
-  Serial.println(leftMotorProportion);
-  Serial.println("Left Motor Speed:");
-  Serial.println(leftMotorSpeed);
-  Serial.println("Left Motor Sign: ");
-  Serial.println(leftSign);
-  Serial.println("\n");
+  if(printCounter == 1000) {
+    Serial.println(readingPrint);
+    // Serial.println("Left Motor Proportion: ");
+    // Serial.println(leftMotorProportion);
+    // Serial.println("Left Motor Speed:");
+    // Serial.println(leftMotorSpeed);
+    // Serial.println("Left Motor Sign: ");
+    // Serial.println(leftSign);
+    // Serial.println("\n");
+    printCounter = 0;
+  } else {
+    printCounter++;    
+  }
   
   //Setting the magnitude of the motor speeds
   // leftMotor->setSpeed(leftMotorSpeed);
