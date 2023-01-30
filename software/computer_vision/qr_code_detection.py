@@ -2,6 +2,8 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+from scipy.spatial import distance
+
 def detect_qr(img, qr):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     
@@ -36,18 +38,25 @@ def detect_qr(img, qr):
         if m.distance < ratio_thresh * n.distance:
             good_matches.append(m)
 
-    #-- Draw matches
+    # Draw matches
     img_matches = np.empty((max(qr.shape[0], img.shape[0]), qr.shape[1]+img.shape[1], 3), dtype=np.uint8)
     cv2.drawMatches(qr, keypoints_qr, img, keypoints_img, good_matches, img_matches, matchColor=(255,0,0), flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     plt.imshow(img_matches)
     plt.show()
 
-    print(len(good_matches))
+    # Get points
+    # src_pts = np.int32([keypoints_qr[m.queryIdx].pt for m in good_matches]).reshape(-1,2)
+    dst_pts = np.int32([keypoints_img[m.trainIdx].pt for m in good_matches]).reshape(-1,2)
 
-    return []
+    # Average of points
+    D = distance.squareform(distance.pdist(dst_pts))
+    D = np.sum(D, axis=1)
+    pt = dst_pts[np.argmin(D)] # Find the point which is closest to all other points (cluster)
 
-img_path = 'sample_picture_qr_26.01.2023.png'
-qr_path = 'qr_code.png'
+    return pt
+
+img_path = 'sample_pictures/sample_picture_qr2_27.01.2023.png'
+qr_path = 'sample_pictures/qr_code.png'
 
 img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -65,8 +74,8 @@ print(qr.shape)
 
 qr = detect_qr(img, qr)
 
-for point in qr:
-    img = cv2.circle(img, point, radius=5, color=(255, 0, 0), thickness=-1)
+# Draw junctions
+img = cv2.circle(img, qr, radius=10, color=(0, 255, 0), thickness=-1)
 
-# plt.imshow(img)
-# plt.show()
+plt.imshow(img)
+plt.show()
