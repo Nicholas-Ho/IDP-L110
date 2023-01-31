@@ -2,7 +2,7 @@ import cv2
 from urllib import request
 import numpy as np
 
-filename = 'sample_pictures/sample_picture_qr2_27.01.2023.png'# 'sample_pictures/camera_calibration/camera_2/sample_picture_camera1_calib'# _27.01.2023.png'
+filename = 'sample_pictures/sample_picture_circles_30.01.2023.png'# 'sample_pictures/camera_calibration/camera_2/sample_picture_camera1_calib'# _27.01.2023.png'
 capture = True
 
 stream = request.urlopen('http://localhost:8081/stream/video.mjpeg')

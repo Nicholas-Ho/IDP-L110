@@ -55,7 +55,7 @@ def detect_qr(img, qr):
 
     return pt
 
-img_path = 'sample_pictures/sample_picture_qr2_27.01.2023.png'
+img_path = 'sample_pictures/sample_picture_qr_26.01.2023.png'
 qr_path = 'sample_pictures/qr_code.png'
 
 img = cv2.imread(img_path, cv2.IMREAD_COLOR)
