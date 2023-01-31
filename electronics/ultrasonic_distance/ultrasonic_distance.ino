@@ -43,6 +43,9 @@ void detectUltrasonic() {
     // Calculate distance (cm)
     int distance = duration * 0.034/2;
 
+    // Set prevMicros
+    prevMicros = currMicros;
+
     return distance;
 
   }
