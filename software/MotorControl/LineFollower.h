@@ -1,5 +1,6 @@
 #ifndef LINE_FOLLOWER_H
 #define LINE_FOLLOWER_H
+#include "Arduino.h"
 
 class LineFollower {
 
@@ -21,11 +22,13 @@ class LineFollower {
         int detectJunction(int lineBinary);
         int followLine(int lineBinary);
 
-        //int turnLeft(int lineBinary);
+        int turnLeft(int lineBinary);
         int turnRight(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int probeJunction(int lineBinary);
+
+        float getTurningTime(float angle);
 
 };
 

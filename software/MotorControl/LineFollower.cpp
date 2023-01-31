@@ -5,6 +5,8 @@ enum direction {straight, left, right, ERROR};
 
 const float wheelSpan; //Distance between wheels
 const float wheelRadius;
+const float wheelRPM = 10; //Currently set to 10 RPM
+float wheelAngularSpeed = (wheelRPM*2*3.14/60);
 
 // Helper stack function
 class Stack {
@@ -51,6 +53,12 @@ float max(float a, float b)
 float min(float a, float b)
 {
   return a <= b ? a : b;  
+}
+
+float LineFollower::getTurningTime(float angle)
+{   //Calculating duration of turn
+    float robotAngularSpeed = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
+    float turningTime = angle/(robotAngularSpeed); //pi divided by angular speed
 }
 
 int LineFollower::control(int lineReadings[4]) {
@@ -185,32 +193,41 @@ int LineFollower::followLine(int lineBinary) {
 }
 
 int LineFollower::turnLeft(int _) {
-
     //Setting motors to turn left
     leftMotor = -basePower;
     rightMotor = basePower;
 
-    // //TODO: Interrupt control to get RPM from rotary encoder
-    // float wheelAngularSpeed = 10;
+    turningTime = getTurningTime(3.141/2);
 
-    // //Calculating duration of 90 degree turn
-    // float angularVelocity = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
-    // float turningTime = 3.141/angularVelocity;
-
-    // while ((millis() - start_time) < turningTime) {}
+    delay(turningTime*1000) //in milliseconds
 
     moveStraight(_);
     return 0;
 }
 
 int LineFollower::turnRight(int _) {
-    // TODO: Turn 90 degrees to the right
+
+    //Setting motors to turn right
+    leftMotor = basePower;
+    rightMotor = -basePower;
+
+    turningTime = getTurningTime(3.141/2);
+
+    delay(turningTime*1000) //in milliseconds
+    
     moveStraight(_);
     return 0;
 }
 
 int LineFollower::turnAround(int _) {
-    // TODO: Turn 180 degrees
+
+    //Setting motors to turn left
+    leftMotor = -basePower;
+    rightMotor = basePower;
+
+    turningTime = getTurningTime(3.141);
+
+    delay(turningTime*1000) //in milliseconds
     return 0;
 }
 
