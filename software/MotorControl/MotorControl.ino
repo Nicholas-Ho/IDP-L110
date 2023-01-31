@@ -83,7 +83,7 @@ void loop()
   int leftMotorSpeed = (int) (fabs(leftMotorProportion)*maxPower);
   int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
 
-  if(printCounter == 1000) {
+  if(printCounter == 100) {
     Serial.println(readingPrint);
     // Serial.println("Left Motor Proportion: ");
     // Serial.println(leftMotorProportion);
@@ -98,10 +98,10 @@ void loop()
   }
   
   //Setting the magnitude of the motor speeds
-  // leftMotor->setSpeed(leftMotorSpeed);
-  // rightMotor->setSpeed(rightMotorSpeed);
-  leftMotor->setSpeed(0);
-  rightMotor->setSpeed(0);
+  leftMotor->setSpeed(leftMotorSpeed);
+  rightMotor->setSpeed(rightMotorSpeed);
+  // leftMotor->setSpeed(0);
+  // rightMotor->setSpeed(0);
 
   //Using the sign of the motor proportion to set the direction of motion for each wheel
   switch(leftSign)
