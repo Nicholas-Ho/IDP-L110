@@ -23,27 +23,38 @@ binary_thresh_j = 15
 cyan_low = (160, 70, 50)
 cyan_high = (200, 255, 255)
 
+blue_low = (180, 100, 20)
+blue_high = (300, 255, 255)
+
+red_low_1 = (0, 100, 20)
+red_high_1 = (10, 255, 255)
+
+red_low_2 = (160, 100, 20)
+red_high_2 = (179, 255, 255)
+
 # Block Detection Settings for Cameras (each camera has a different resolution)
 camera = args.camera # 1 or 2
 
 # Camera 1
-crop_1 = {'y': (50, 700), 'x': (200, 400)}
-size_thresh_1 = 100
+block_crop_1 = {'y': (50, 700), 'x': (200, 400)}
+block_size_thresh_1 = 100
 
 # Camera 2
-crop_2 = {'y': (50, 700), 'x': (150, 350)}
-size_thresh_2 = 100
+block_crop_2 = {'y': (50, 700), 'x': (150, 350)}
+block_size_thresh_2 = 100
+
+delivery_crop = {'y': (50, 700), 'x': (725, 900)}
+delivery_size_thresh = 500
 
 if camera == 1:
-    crop = crop_1
-    size_thresh = size_thresh_1
+    block_crop = block_crop_1
+    block_size_thresh = block_size_thresh_1
 else:
-    crop = crop_2
-    size_thresh = size_thresh_2
-
-
+    block_crop = block_crop_2
+    block_size_thresh = block_size_thresh_2
 
 def _process_img(img):
+
     # Blurring to smear non-targets
     img = cv2.blur(img, (4,4))
 
@@ -92,7 +103,7 @@ def find_junctions(img):
 
 def find_red(img):
     # Cropping left side of image to isolate junctions with block
-    zoomed_img = img[crop['y'][0]:crop['y'][1], crop['x'][0]:crop['x'][1]]
+    zoomed_img = img[block_crop['y'][0]:block_crop['y'][1], block_crop['x'][0]:block_crop['x'][1]]
     
     # Inverting the image and looking for the colour cyan -- same as looking for red in non-inverted space
     hsv_img = cv2.cvtColor(zoomed_img, cv2.COLOR_RGB2HSV)
@@ -102,12 +113,12 @@ def find_red(img):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     output = []
     for contour in contours:
-        if cv2.contourArea(contour) > size_thresh:
+        if cv2.contourArea(contour) > block_size_thresh:
             # Find centre of contour
             M = cv2.moments(contour)
             if M['m00'] != 0:
-                cx = int(M['m10']/M['m00']) + crop['x'][0] # Converting coordinates back to uncropped
-                cy = int(M['m01']/M['m00']) + crop['y'][0]
+                cx = int(M['m10']/M['m00']) + block_crop['x'][0] # Converting coordinates back to uncropped
+                cy = int(M['m01']/M['m00']) + block_crop['y'][0]
             output.append({'centre': (cx, cy), 'contour': contour})
     return output
 
@@ -121,6 +132,26 @@ def find_block_junctions(junctions, blocks):
 
     return block_junctions
 
+def find_delivery_area(img):
+
+    zoomed_img = zoomed_img = img[delivery_crop['y'][0]:delivery_crop['y'][1], delivery_crop['x'][0]:delivery_crop['x'][1]]
+
+    hsv_img = cv2.cvtColor(zoomed_img, cv2.COLOR_BGR2HSV)
+    mask2 = cv2.inRange(hsv_img, blue_low, blue_high)
+
+    #Inverting the image and looking for the colour cyan in HSV space-- same as looking for red in non-inverted space
+    hsv_img = cv2.cvtColor(zoomed_img, cv2.COLOR_RGB2HSV)
+    mask1 = cv2.inRange(hsv_img, cyan_low, cyan_high)
+
+    plt.imshow(hsv_img)
+
+    contours, hierarchy = cv2.findContours(mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # cv2.imshow("Zoomed", zoomed_img)
+    # cv2.waitKey(0)
+
+    plt.imshow(mask1 + mask2)
+    plt.show()
 
 # Some of the images are saved as half-resolution for some reason? Investigate
 img_path = 'sample_picture_block2_25.01.2023.png'
@@ -141,7 +172,7 @@ blocks = find_red(img)
 # Draw red block
 for block in blocks:
     x,y,w,h = cv2.boundingRect(block['contour'])
-    zoomed_img = img[crop['y'][0]:crop['y'][1], crop['x'][0]:crop['x'][1]]
+    zoomed_img = img[block_crop['y'][0]:block_crop['y'][1], block_crop['x'][0]:block_crop['x'][1]]
     cv2.rectangle(zoomed_img,(x,y),(x+w,y+h),(0,255,0),2)
     cv2.putText(zoomed_img, "Red Block", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
@@ -149,8 +180,10 @@ for block in blocks:
 block_junctions = find_block_junctions(junctions, blocks)
 
 # Draw junctions
-for junction in block_junctions:
-    img = cv2.circle(img, junction[0], radius=10, color=(0, 255, 0), thickness=-1)
+#for junction in block_junctions:
+    #img = cv2.circle(img, junction[0], radius=10, color=(0, 255, 0), thickness=-1)
+
+find_delivery_area(img)
 
 # Show final image
 img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # Converting back to BGR space
