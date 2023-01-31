@@ -1,7 +1,7 @@
 // Ultrasonic sensor (basic distance return to serial port)
 
-int trigPin = 9;
-int echoPin = 8;
+int trigPin = 1;
+int echoPin = 0;
 
 long duration;
 int distance;
