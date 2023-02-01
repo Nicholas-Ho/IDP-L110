@@ -4,7 +4,7 @@
 
 int trigPin = 3;
 int echoPin = 2;
-int maxDist = 10; // In cm
+int maxDist = 20; // In cm
 
 NewPing sonar(trigPin, echoPin, maxDist);
 
