@@ -39,6 +39,10 @@ int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg 
 int uSonicInterval = 50; // In milliseconds
 long prevMillis = 0;
 
+//Blinky pin
+int blinkyPin = 11;
+bool blinkyState = false; // True if blinking
+
 void setup() 
 {
 
@@ -64,6 +68,9 @@ void setup()
   pinMode(linePins[1], INPUT);
   pinMode(linePins[2], INPUT);
   pinMode(linePins[3], INPUT);
+
+  // Setup blinky
+  pinMode(blinkyPin, OUTPUT);
 
 }
 
@@ -117,12 +124,21 @@ void loop()
       // TODO: Replace with block-grabbing code
       leftMotorPropotion = 0;
       rightMotorProportion = 0;
+      break;
 
     default:
       Serial.println("Invalid block state.");
       break;
   }
-  
+
+  if(leftMotorProportion == 0 && rightMotorProportion == 0 && blinkyState == true) {
+    digitalWrite(blinkyPin, LOW);
+    blinkyState = false;
+  } else if(!(leftMotorProportion == 0 && rightMotorProportion == 0) && blinkyState == false) {
+    digitalWrite(blinkyPin, HIGH);
+    blinkyState = true;
+  }
+
   //Protecting against invalid motor proportions that would cause motor speeds to exceed the max
   if (leftMotorProportion > 1.0)  {leftMotorProportion = 1;}
   if (rightMotorProportion > 1.0) {rightMotorProportion = 1;}
