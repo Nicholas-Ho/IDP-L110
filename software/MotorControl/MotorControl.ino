@@ -107,11 +107,11 @@ void loop()
   switch(leftSign)
   {
     case 0:
-      leftMotor->run(BACKWARD);
+      leftMotor->run(FORWARD);
       break;
 
     case 1: 
-      leftMotor->run(FORWARD);
+      leftMotor->run(BACKWARD);
       break;
 
     default:
@@ -123,11 +123,11 @@ void loop()
   switch(rightSign)
   {
     case 0:
-      rightMotor->run(BACKWARD);
+      rightMotor->run(FORWARD);
       break;
 
     case 1: 
-      rightMotor->run(FORWARD);
+      rightMotor->run(BACKWARD);
       break;
 
     default:
