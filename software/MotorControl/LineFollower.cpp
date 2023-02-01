@@ -113,8 +113,10 @@ int LineFollower::pathfind(direction dir)
             switch(branchCounter)   {
                 case 1:
                     res = 0; //branchCounter is 1 so this is a red delivery box, return 0 because we want to turn here
+                    break;
                 case default:
                     res = -1;
+                    break;
             }
         }
         else if (blockColour == 0) //Block is blue
@@ -122,8 +124,10 @@ int LineFollower::pathfind(direction dir)
             switch(branchCounter)   {
                 case 0:
                     res = 0; //branchCounter is 0 so this is a green delivery box, return 0 because we want to turn here
+                    break;
                 case default:
                     res = -1;
+                    break;
             }
         }
         //Add 1 to branchCounter for the right branch
