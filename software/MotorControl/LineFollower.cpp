@@ -145,7 +145,7 @@ int LineFollower::pathfind(direction dir)
 
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
-    // came from from interferring
+    // came from interferring
     static Stack dirStack = Stack();
     int turnHome;
 
@@ -181,7 +181,7 @@ int LineFollower::detectJunction(int lineBinary) {
 
         else    {
             turnHome = pathfind(left);
-            //TODO: Make sure the junction isn't counted twice, move forward immediately
+            //TODO: Make sure the junction isn't counted twice (move forward immediately)
         }
 
         return 0;
