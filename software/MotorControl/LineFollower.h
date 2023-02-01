@@ -27,6 +27,7 @@ class LineFollower {
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int probeJunction(int lineBinary);
+        int pathfind(direction dir);
 
         float getTurningTime(float angle);
 
