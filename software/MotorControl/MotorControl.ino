@@ -85,8 +85,10 @@ void loop()
 
   if(printCounter == 100) {
     Serial.println(readingPrint);
-    // Serial.println("Left Motor Proportion: ");
-    // Serial.println(leftMotorProportion);
+    Serial.println("Left Motor Proportion: ");
+    Serial.println(leftMotorProportion);
+    Serial.println("Right Motor Proportion: ");
+    Serial.println(rightMotorProportion);
     // Serial.println("Left Motor Speed:");
     // Serial.println(leftMotorSpeed);
     // Serial.println("Left Motor Sign: ");
@@ -107,11 +109,11 @@ void loop()
   switch(leftSign)
   {
     case 0:
-      leftMotor->run(FORWARD);
+      leftMotor->run(BACKWARD);
       break;
 
     case 1: 
-      leftMotor->run(BACKWARD);
+      leftMotor->run(FORWARD);
       break;
 
     default:
@@ -123,11 +125,11 @@ void loop()
   switch(rightSign)
   {
     case 0:
-      rightMotor->run(FORWARD);
+      rightMotor->run(BACKWARD);
       break;
 
     case 1: 
-      rightMotor->run(BACKWARD);
+      rightMotor->run(FORWARD);
       break;
 
     default:
