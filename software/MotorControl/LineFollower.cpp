@@ -1,4 +1,5 @@
 #include "LineFollower.h"
+#include <Arduino.h>
 
 // For T-junction logic
 enum direction {straight, left, right, ERROR};
@@ -256,6 +257,13 @@ int LineFollower::followLine(int lineBinary) {
     // Update lastError for switch default
     lastError = error;
 
+    if(printCounter == 100) {
+      Serial.println(error);
+      printCounter = 0;
+    } else {
+      printCounter++;    
+    }
+
     // Based on the error, do some proportional control
     leftMotor -= kp * error;
     rightMotor += kp * error;
@@ -303,6 +311,8 @@ int LineFollower::turnAround(int _) {
     turningTime = getTurningTime(3.141);
 
     delay(turningTime*1000) //in milliseconds
+    
+    activeFunc = nullptr;
     return 0;
 }
 

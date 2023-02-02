@@ -13,7 +13,7 @@ class LineFollower {
         float& leftMotor;
         float& rightMotor;
 
-        float kp = 0.2; // In proportion of maximum power
+        float kp = 0.233; // In proportion of maximum power
         float basePower = 0.5; // Base power (before correction)
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
@@ -30,6 +30,8 @@ class LineFollower {
         int pathfind(direction dir);
 
         float getTurningTime(float angle);
+
+        int printCounter = 0;
 
 };
 
