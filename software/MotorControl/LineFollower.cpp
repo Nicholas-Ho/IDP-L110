@@ -6,6 +6,11 @@ enum direction {straight, left, right, ERROR};
 
 const float wheelSpan; //Distance between wheels
 const float wheelRadius;
+const float wheelRPM = 10; //Currently set to 10 RPM
+float wheelAngularSpeed = (wheelRPM*2*3.14/60);
+
+int blockColour = -1; //Temp variable to store block colour. 0: Blue, 1: Red, -1: no block
+
 
 // Helper stack function
 class Stack {
@@ -54,6 +59,12 @@ float min(float a, float b)
   return a <= b ? a : b;  
 }
 
+float LineFollower::getTurningTime(float angle)
+{   //Calculating duration of turn
+    float robotAngularSpeed = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
+    float turningTime = angle/(robotAngularSpeed); //pi divided by angular speed
+}
+
 int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
     int lineBinary = lineReadings[0]*8 + lineReadings[1]*4 + lineReadings[2]*2 + lineReadings[3];
@@ -84,10 +95,60 @@ int LineFollower::detectEnd(int lineBinary) {
     return -1;
 }
 
+int LineFollower::pathfind(direction dir)
+{   /*
+    Function returns -1 if the robot should continue on, and 0 if it should turn into the home junction
+    Add 1 for every branch on the right, take one away for every branch on the left
+    Red delivery box -> 1
+    Green delivery box -> 0
+    */
+
+    static int branchCounter = 0;
+    int res;
+
+    //We have reached a potential home junction
+    if (dir == right)
+    {   
+        if (blockColour == 1) //Block is red
+        {
+            switch(branchCounter)   {
+                case 1:
+                    res = 0; //branchCounter is 1 so this is a red delivery box, return 0 because we want to turn here
+                    break;
+                case default:
+                    res = -1;
+                    break;
+            }
+        }
+        else if (blockColour == 0) //Block is blue
+        {
+            switch(branchCounter)   {
+                case 0:
+                    res = 0; //branchCounter is 0 so this is a green delivery box, return 0 because we want to turn here
+                    break;
+                case default:
+                    res = -1;
+                    break;
+            }
+        }
+        //Add 1 to branchCounter for the right branch
+        branchCounter++;
+    }
+    else if (dir == left)
+    {
+        //Subtract 1 from branchCounter for the left branch
+        branchCounter--;
+        res = -1; //We never want to turn into a left branch for home 
+    }
+
+    return res;
+}
+
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
     // came from from interferring
     static Stack dirStack = Stack();
+    int turnHome;
 
     if(lineBinary == 15) { // [1 1 1 1]
         if(dirStack.isEmpty() == true) {
@@ -109,24 +170,46 @@ int LineFollower::detectJunction(int lineBinary) {
             activeFunc = &moveStraight;
         }
     } else if(lineBinary == 14) { // [1 1 1 0]
-        // Move forward a tiny bit to ensure that it isn't a two-way junction
-        activeFunc = &probeJunction;
-        // If only one branch, turn 90 degrees to the left
-        // If two branches, move to two-branch logic
-        activeFunc = &turnLeft;
-        dirStack.add(left);
+
+        if (blockColour == -1)  { //If the block has not been picked up
+            // Move forward a tiny bit to ensure that it isn't a two-way junction
+            activeFunc = &probeJunction;
+            // If only one branch, turn 90 degrees to the left
+            // If two branches, move to two-branch logic
+            activeFunc = &turnLeft;
+            dirStack.add(left);
+        }
+
+        else    {
+            turnHome = pathfind(left);
+            //TODO: Make sure the junction isn't counted twice, move forward immediately
+        }
+
         return 0;
+
     } else if(lineBinary == 7) { // [0 1 1 1]
-        // Move forward a tiny bit to ensure that it isn't a two-way junction
-        activeFunc = &probeJunction;
-        // If only one branch, turn 90 degrees to the right
-        // If two branches, move to two-branch logic
-        activeFunc = &turnRight;
-        dirStack.add(right);
+        if (blockColour == -1)
+        {
+            // Move forward a tiny bit to ensure that it isn't a two-way junction
+            activeFunc = &probeJunction;
+            // If only one branch, turn 90 degrees to the right
+            // If two branches, move to two-branch logic
+            activeFunc = &turnRight;
+            dirStack.add(right);
+        }
+        else    {
+            turnHome = pathfind(right);
+            if(turnHome == 1) 
+            {
+                activeFunc = &turnRight; //Turn right into the delivery area
+                dirStack.add(right);
+            }
+
         return 0;
     }
 
     return -1;
+`}
 }
 
 int LineFollower::followLine(int lineBinary) {
@@ -193,33 +276,42 @@ int LineFollower::followLine(int lineBinary) {
 }
 
 int LineFollower::turnLeft(int _) {
-
     //Setting motors to turn left
     leftMotor = -basePower;
     rightMotor = basePower;
 
-    // //TODO: Interrupt control to get RPM from rotary encoder
-    // float wheelAngularSpeed = 10;
+    turningTime = getTurningTime(3.141/2);
 
-    // //Calculating duration of 90 degree turn
-    // float angularVelocity = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
-    // float turningTime = 3.141/angularVelocity;
-
-    // while ((millis() - start_time) < turningTime) {}
+    delay(turningTime*1000) //in milliseconds
 
     moveStraight(_);
     return 0;
 }
 
 int LineFollower::turnRight(int _) {
-    // TODO: Turn 90 degrees to the right
+
+    //Setting motors to turn right
+    leftMotor = basePower;
+    rightMotor = -basePower;
+
+    turningTime = getTurningTime(3.141/2);
+
+    delay(turningTime*1000) //in milliseconds
+    
     moveStraight(_);
     return 0;
 }
 
 int LineFollower::turnAround(int _) {
-    // TODO: Turn 180 degrees
-    // Remove this
+
+    //Setting motors to turn left
+    leftMotor = -basePower;
+    rightMotor = basePower;
+
+    turningTime = getTurningTime(3.141);
+
+    delay(turningTime*1000) //in milliseconds
+    
     activeFunc = nullptr;
     return 0;
 }
