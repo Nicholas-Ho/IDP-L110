@@ -1,9 +1,6 @@
 #include "LineFollower.h"
 #include <Arduino.h>
 
-// For T-junction logic
-enum direction {straight, left, right, ERROR};
-
 const float wheelSpan; //Distance between wheels
 const float wheelRadius;
 const float wheelRPM = 10; //Currently set to 10 RPM
@@ -152,10 +149,8 @@ int LineFollower::detectJunction(int lineBinary) {
 
     if(lineBinary == 15) { // [1 1 1 1]
         if(dirStack.isEmpty() == true) {
-            // Visit the left branch, the right branch then continue down the path
-            dirStack.add(left);
-            dirStack.add(straight);
-            dirStack.add(right);
+            // Skip cross-junction
+            activeFunc = &moveStraight;
         }
 
         direction nextDir = dirStack.pop();
@@ -174,9 +169,9 @@ int LineFollower::detectJunction(int lineBinary) {
         if (blockColour == -1)  { //If the block has not been picked up
             // Move forward a tiny bit to ensure that it isn't a two-way junction
             activeFunc = &probeJunction;
+            probeState = left;
             // If only one branch, turn 90 degrees to the left
             // If two branches, move to two-branch logic
-            activeFunc = &turnLeft;
             dirStack.add(left);
         }
 
@@ -192,9 +187,9 @@ int LineFollower::detectJunction(int lineBinary) {
         {
             // Move forward a tiny bit to ensure that it isn't a two-way junction
             activeFunc = &probeJunction;
+            probeState = right;
             // If only one branch, turn 90 degrees to the right
             // If two branches, move to two-branch logic
-            activeFunc = &turnRight;
             dirStack.add(right);
         }
         else    {
@@ -202,6 +197,7 @@ int LineFollower::detectJunction(int lineBinary) {
             if(turnHome == 1) 
             {
                 activeFunc = &turnRight; //Turn right into the delivery area
+                // TODO: Add block delivery function
                 dirStack.add(right);
             }
 
@@ -317,19 +313,15 @@ int LineFollower::turnAround(int _) {
 }
 
 int LineFollower::moveStraight(int _) {
-    static int count = 0;
-    static const int max_count = 10; // TODO: Tune the duration of the movement
+    //Setting motors to turn left
+    leftMotor = basePower;
+    rightMotor = basePower;
 
-    if(count == max_count) {
-        count = 0;
-        activeFunc = nullptr;
-        return 0;
-    } else {
-        leftMotor = basePower;
-        rightMotor = basePower;
-        count++;
-        return 0;
-    }
+    delay(750) //in milliseconds. TODO: Tune duration
+    
+    activeFunc = nullptr;
+
+    return 0;
 }
 
 int LineFollower::probeJunction(int lineBinary) {
@@ -338,7 +330,14 @@ int LineFollower::probeJunction(int lineBinary) {
 
     if(lineBinary == 15 || count == max_count) {
         count = 0;
-        activeFunc = nullptr;
+        if(probeState == left) {
+            activeFunc = &turnLeft;
+        } else if(probeState == right) {
+            activeFunc = &turnRight;
+        } else {
+            activeFunc = nullptr;
+        }
+        probeState = NONE;
         return 0;
     } else {
         leftMotor = basePower / 3;

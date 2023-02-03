@@ -2,6 +2,9 @@
 #define LINE_FOLLOWER_H
 #include "Arduino.h"
 
+// For clarity
+enum direction {straight, left, right, NONE, ERROR};
+
 class LineFollower {
 
     public:
@@ -13,8 +16,10 @@ class LineFollower {
         float& leftMotor;
         float& rightMotor;
 
-        float kp = 0.233; // In proportion of maximum power
-        float basePower = 0.5; // Base power (before correction)
+        const float kp = 0.233; // In proportion of maximum power
+        const float basePower = 0.5; // Base power (before correction)
+
+        direction probeState = NONE; // State for probe junction
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
 
