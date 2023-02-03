@@ -5,12 +5,17 @@
 // For clarity
 enum direction {straight, left, right, NONE, ERROR};
 
+// Physical constants
+const float wheelSpan; //Distance between wheels
+const float wheelRadius;
+const float wheelRPM = 10; //Currently set to 10 RPM
+const float wheelAngularSpeed = (wheelRPM*2*3.14/60);
+
 class LineFollower {
 
     public:
         LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
         int control(int lineReadings[4]);
-        int turnLeft(int lineBinary);
 
     private:
         float& leftMotor;
@@ -19,7 +24,7 @@ class LineFollower {
         const float kp = 0.233; // In proportion of maximum power
         const float basePower = 0.5; // Base power (before correction)
 
-        direction probeState = NONE; // State for probe junction
+        direction probeStateJ = NONE; // State for probe junction
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
 
@@ -32,6 +37,7 @@ class LineFollower {
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int probeJunction(int lineBinary);
+        int probeEnd(int lineBinary);
         int pathfind(direction dir);
 
         float getTurningTime(float angle);
