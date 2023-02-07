@@ -12,9 +12,9 @@ CircularBuffer::CircularBuffer(int bufferSize, bool initialise=false, int initVa
     size = (bufferSize <= ARRAY_SIZE) ? bufferSize : ARRAY_SIZE;
 
     if(initValue != 0) {
-        for(int i=0; i < (ARRAY_SIZE); i++) {
-            buffer[i] = initValue;
-        }
+      for(int i=0; i < (ARRAY_SIZE); i++) {
+          buffer[i] = initValue;
+      }
     }
 
     if(initialise == true) {
@@ -59,7 +59,7 @@ int CircularBuffer::pop() {
 // Reset and fill entire buffer with same value
 int CircularBuffer::resetFill(int resetValue) {
   for(int i=0; i < (ARRAY_SIZE); i++) {
-      buffer[i] = initValue;
+      buffer[i] = resetValue;
   }
   firstIndex = 0;
   lastIndex = size-1;

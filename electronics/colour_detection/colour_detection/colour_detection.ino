@@ -2,6 +2,8 @@
 
 // Analogue pin
 int colourPinIn = A0;
+int bluePinOut = 7;
+int redPinOut = 8;
 int isBlue = 0;
 int isRed = 0;
 
@@ -10,10 +12,10 @@ int buttonPin = 2;
 
 int blueThreshold = 40; // in bits
 
-// State 0: Paused
-// State 1: Detecting
-int state = 1;
-int prevState = 1; // To detect change in state
+// State 0: Dormant
+// State 1: Initialising
+// State 2: Recording
+int state = 0;
 
 // Checking against sample approximately 1 s ago
 CircularBuffer pastSamples = CircularBuffer(100, true, 1023);
@@ -23,12 +25,14 @@ int interval = 10;
 long currMillis = 0;
 long prevMillis = 0;
 
-// Counter, if approximately 3 seconds is up, declare red
-int counterThresh = 300;
+// Counter, if approximately 5 seconds is up, declare red
+int counterThresh = 500;
 int counter = 0;
 
 void setup() {
   pinMode(buttonPin, INPUT);
+  pinMode(bluePinOut, OUTPUT);
+  pinMode(redPinOut, OUTPUT);
   Serial.begin(9600);
 }
 
@@ -36,7 +40,7 @@ void loop() {
   int sensorVal = analogRead(colourPinIn);
   int buttonIn = digitalRead(buttonPin); // Button to simulate ultrasonic sensor input
 
-  if(buttonIn == High) {
+  if(buttonIn == HIGH) {
     initialiseDetector(); // Feels like it should be its own class. Will work on that
   }
   detectColour(sensorVal);  
@@ -44,6 +48,7 @@ void loop() {
 
 void initialiseDetector() {
   if(state == 0) { // Ensure no interruptions
+    Serial.println("Initialising...");
     state = 1;
   }
 }
@@ -59,31 +64,35 @@ void detectColour(int sensorVal) {
         pastSamples.resetFill(1023);
         state = 2;
         counter = 0;
-        isBlue = 0;
-        isRed = 0;
+        digitalWrite(bluePinOut, LOW);
+        digitalWrite(redPinOut, LOW);
         Serial.println("Recording");
         break;
       case 2: // State 2: Recording
         int prevVal = pastSamples.pop();
 
-        Serial.print(sensorVal);
-        Serial.print(" ");
-        Serial.println(prevVal);
+        // Serial.print(sensorVal);
+        // Serial.print(" ");
+        // Serial.println(prevVal);
 
         pastSamples.add(sensorVal);
 
         if(sensorVal - prevVal >= blueThreshold) {
           Serial.println("Blue!");
-          isBlue = 1;
-          isRed = 0;
+          digitalWrite(bluePinOut, HIGH);
+          digitalWrite(redPinOut, LOW);
           state = 0;
           counter = 0; // Reset counter (just in case)
         } else {
           counter++;
+          if(counter % 100 == 0) {
+            Serial.print(counter/100);
+            Serial.println(" seconds");
+          }
           if(counter >= counterThresh) {
             Serial.println("Red!");
-            isBlue = 0;
-            isRed = 1;
+            digitalWrite(bluePinOut, LOW);
+            digitalWrite(redPinOut, HIGH);
             state = 0;
             counter = 0; // Reset counter (just in case)
           }
@@ -92,6 +101,7 @@ void detectColour(int sensorVal) {
       default:
         Serial.println("Illegal state encountered.");
         break;
+    }
     prevMillis = currMillis;
   }
 }
