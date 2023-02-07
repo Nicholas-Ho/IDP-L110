@@ -1,5 +1,6 @@
 #include <Adafruit_MotorShield.h>
 #include "LineFollower.h"
+#include "ColourDetector.h"
 #include <NewPing.h>
 
 //Instantiate MotorShield object
@@ -39,6 +40,17 @@ int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg 
 int uSonicInterval = 50; // In milliseconds
 long prevMillis = 0;
 
+// Pins for colour detection
+int colourPinIn = A0; // Analog In
+int bluePinOut = 13; // Digital Out
+int redPinOut = 12; // Digital Out
+
+int colourSensorVal = 0;
+int colour = 0; // 0: None (yet), 1: Blue, 2: Red, -1: ERROR
+
+//Instantiate a colour detector object
+ColourDetector detector = ColourDetector();
+
 //Blinky pin
 int blinkyPin = 11;
 bool blinkyState = false; // True if blinking
@@ -69,6 +81,10 @@ void setup()
   pinMode(linePins[2], INPUT);
   pinMode(linePins[3], INPUT);
 
+  //Setup colour LEDs
+  pinMode(bluePinOut, OUTPUT);
+  pinMode(redPinOut, OUTPUT);
+
   // Setup blinky
   pinMode(blinkyPin, OUTPUT);
 
@@ -80,6 +96,7 @@ void loop()
 { 
   String readingPrint = "";
 
+  // LINE CONTROL
   // Read line sensors
   for(int i=0; i < 4; i++) {
     lineReadings[i] = digitalRead(linePins[i]);
@@ -95,7 +112,7 @@ void loop()
 
   controller.control(lineReadings); //left and right motor proportions are set now
 
-  // Check ultrasonic
+  // ULTRASONIC
   long currMillis = millis();
   if(currMillis - prevMillis >= uSonicInterval) {
     int dist = sonar.ping_cm();
@@ -104,7 +121,6 @@ void loop()
       blockState = 1;
     } else if(dist <= 4) {
       // Something is within 4 cm
-      // TODO: Replace below code with block grabbing code
       blockState = 2;
     } else {
       blockState = 0;
@@ -122,8 +138,9 @@ void loop()
 
     case 2:
       // TODO: Replace with block-grabbing code
-      leftMotorPropotion = 0;
+      leftMotorProportion = 0;
       rightMotorProportion = 0;
+      detector.initialiseDetector();
       break;
 
     default:
@@ -131,12 +148,22 @@ void loop()
       break;
   }
 
-  if(leftMotorProportion == 0 && rightMotorProportion == 0 && blinkyState == true) {
-    digitalWrite(blinkyPin, LOW);
-    blinkyState = false;
-  } else if(!(leftMotorProportion == 0 && rightMotorProportion == 0) && blinkyState == false) {
-    digitalWrite(blinkyPin, HIGH);
-    blinkyState = true;
+  // COLOUR DETECTION
+  colourSensorVal = analogRead(colourPinIn);
+  colour = detector.detectColour(colourSensorVal);
+
+  if(colour == 1) { // Blue
+    digitalWrite(bluePinOut, HIGH);
+    digitalWrite(redPinOut, LOW);
+    delay(1000);
+    digitalWrite(bluePinOut, LOW);
+    digitalWrite(redPinOut, LOW);
+  } else if(colour == 2) { // Red
+    digitalWrite(bluePinOut, LOW);
+    digitalWrite(redPinOut, HIGH);
+    delay(1000);
+    digitalWrite(bluePinOut, LOW);
+    digitalWrite(redPinOut, LOW);
   }
 
   //Protecting against invalid motor proportions that would cause motor speeds to exceed the max
@@ -150,6 +177,15 @@ void loop()
   //Setting the motor speeds based on proportions
   int leftMotorSpeed = (int) (fabs(leftMotorProportion)*maxPower);
   int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
+
+  // BLINKY
+  if(leftMotorProportion == 0 && rightMotorProportion == 0 && blinkyState == true) {
+    digitalWrite(blinkyPin, LOW);
+    blinkyState = false;
+  } else if(!(leftMotorProportion == 0 && rightMotorProportion == 0) && blinkyState == false) {
+    digitalWrite(blinkyPin, HIGH);
+    blinkyState = true;
+  }
 
   if(printCounter == 100) {
     Serial.println(readingPrint);

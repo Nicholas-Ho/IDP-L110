@@ -12,9 +12,9 @@ CircularBuffer::CircularBuffer(int bufferSize, bool initialise=false, int initVa
     size = (bufferSize <= ARRAY_SIZE) ? bufferSize : ARRAY_SIZE;
 
     if(initValue != 0) {
-        for(int i=0; i < (ARRAY_SIZE); i++) {
-            buffer[i] = initValue;
-        }
+      for(int i=0; i < (ARRAY_SIZE); i++) {
+          buffer[i] = initValue;
+      }
     }
 
     if(initialise == true) {
@@ -56,6 +56,17 @@ int CircularBuffer::pop() {
     }
 }
 
+// Reset and fill entire buffer with same value
+int CircularBuffer::resetFill(int resetValue) {
+  for(int i=0; i < (ARRAY_SIZE); i++) {
+      buffer[i] = resetValue;
+  }
+  firstIndex = 0;
+  lastIndex = size-1;
+  bufferLength = size;
+  return 0;
+}
+
 // Override read operator to get buffer at index
 int CircularBuffer::operator [](int i) {
     if(i < bufferLength) {
@@ -66,27 +77,3 @@ int CircularBuffer::operator [](int i) {
         return -1;
     }
 }
-
-// // Testing
-// int main() {
-//     CircularBuffer buffer(5);
-//     buffer.add(1);
-//     buffer.add(2);
-//     buffer.add(4);
-//     std::cout << buffer[0] << " " << buffer[1] << " " << buffer[2] << "\n";
-//     for(int i=0; i<4; i++) {
-//          std::cout<< buffer.pop() << "\n";
-//     }
-//     for(int i=0; i<10; i++) {
-//         buffer.add(i);
-//     }
-//     std::cout << buffer[0] << " " << buffer[1] << " " << buffer[2] << " " << buffer[3] << " " << buffer[4] << "\n";
-//     for(int i=0; i<5; i++) {
-//         buffer.pop();
-//     }
-//     for(int i=0; i<5; i++) {
-//         buffer.add(i*3);
-//     }
-//     std::cout << buffer[0] << " " << buffer[1] << " " << buffer[2] << " " << buffer[3] << " " << buffer[4] << "\n";
-//     return 0;
-// };
