@@ -56,17 +56,6 @@ int CircularBuffer::pop() {
     }
 }
 
-// Reset and fill entire buffer with same value
-int CircularBuffer::resetFill(int resetValue) {
-  for(int i=0; i < (ARRAY_SIZE); i++) {
-      buffer[i] = initValue;
-  }
-  firstIndex = 0;
-  lastIndex = size-1;
-  bufferLength = size;
-  return 0;
-}
-
 // Override read operator to get buffer at index
 int CircularBuffer::operator [](int i) {
     if(i < bufferLength) {
