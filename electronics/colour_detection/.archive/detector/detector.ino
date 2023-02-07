@@ -1,3 +1,5 @@
+// ARCHIVE
+
 #include "circular_buffer.h"
 
 // Analogue pin
@@ -10,7 +12,7 @@ int isRed = 0;
 // Digital pin (for test button)
 int buttonPin = 2;
 
-int blueThreshold = 40; // in bits
+int blueThreshold = 70; // in bits
 
 // State 0: Dormant
 // State 1: Initialising
@@ -79,6 +81,7 @@ void detectColour(int sensorVal) {
 
         if(sensorVal - prevVal >= blueThreshold) {
           Serial.println("Blue!");
+          Serial.println(sensorVal-prevVal);
           digitalWrite(bluePinOut, HIGH);
           digitalWrite(redPinOut, LOW);
           state = 0;

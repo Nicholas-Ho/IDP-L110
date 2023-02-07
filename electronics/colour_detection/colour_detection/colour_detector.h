@@ -8,7 +8,7 @@ class ColourDetector {
         // State 2: Recording
         int state = 0;
 
-        int blueThreshold = 40; // in bits
+        int blueThreshold = 30; // in bits
 
         // Checking against sample approximately 1 s ago
         CircularBuffer pastSamples = CircularBuffer(100, true, 1023);
@@ -26,4 +26,4 @@ class ColourDetector {
         void initialiseDetector();
         int detectColour(int sensorVal);
         int getState();
-}
+};

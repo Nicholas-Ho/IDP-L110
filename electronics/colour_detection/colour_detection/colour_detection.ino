@@ -16,6 +16,11 @@ void setup() {
   pinMode(buttonPin, INPUT);
   pinMode(bluePinOut, OUTPUT);
   pinMode(redPinOut, OUTPUT);
+  digitalWrite(bluePinOut, HIGH);
+  digitalWrite(redPinOut, HIGH);
+  delay(1000);
+  digitalWrite(bluePinOut, HIGH);
+  digitalWrite(redPinOut, LOW);
   Serial.begin(9600);
 }
 
@@ -32,15 +37,17 @@ void loop() {
   isRed = colour == 2;
 
   if(isBlue == true) {
+    Serial.println("Blue!!!");
     digitalWrite(bluePinOut, HIGH);
     digitalWrite(redPinOut, LOW);
-    delay(500);
+    delay(1000);
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, LOW);
   } else if(isRed == true) {
+    Serial.println("Red!!!");
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, HIGH);
-    delay(500);
+    delay(1000);
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, LOW);
   }
