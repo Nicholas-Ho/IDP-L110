@@ -17,6 +17,8 @@ class LineFollower {
         LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
         int control(int lineReadings[4]);
 
+        bool inTunnel = false; //Indicate whether or not the robot is in the tunnel (for ultrasonic detector)
+
     private:
         float& leftMotor;
         float& rightMotor;
