@@ -46,7 +46,7 @@ int bluePinOut = 13; // Digital Out
 int redPinOut = 12; // Digital Out
 
 int colourSensorVal = 0;
-int colour = 0; // 0: None (yet), 1: Blue, 2: Red, -1: ERROR
+Colour colour = 0;
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
@@ -73,7 +73,7 @@ void setup()
   leftMotor->run(RELEASE);
   rightMotor->run(RELEASE);
 
-  controller.turnLeft(0);
+  // controller.turnLeft(0);
 
   // Setup line sensors
   pinMode(linePins[0], INPUT);
@@ -152,13 +152,13 @@ void loop()
   colourSensorVal = analogRead(colourPinIn);
   colour = detector.detectColour(colourSensorVal);
 
-  if(colour == 1) { // Blue
+  if(colour == Blue) { // Blue
     digitalWrite(bluePinOut, HIGH);
     digitalWrite(redPinOut, LOW);
     delay(1000);
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, LOW);
-  } else if(colour == 2) { // Red
+  } else if(colour == Red) { // Red
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, HIGH);
     delay(1000);

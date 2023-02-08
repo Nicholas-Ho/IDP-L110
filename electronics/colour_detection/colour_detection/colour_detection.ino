@@ -28,9 +28,7 @@ void loop() {
   int sensorVal = analogRead(colourPinIn);
   int buttonIn = digitalRead(buttonPin); // Button to simulate ultrasonic sensor input
 
-  if(buttonIn == HIGH) {
-    detector.initialiseDetector();
-  }
+  detector.initialiseDetector();
   
   int colour = detector.detectColour(sensorVal);
   isBlue = colour == 1;
