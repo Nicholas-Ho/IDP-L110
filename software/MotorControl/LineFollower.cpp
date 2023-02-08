@@ -248,12 +248,12 @@ int LineFollower::followLine(int lineBinary) {
     // Update lastError for switch default
     lastError = error;
 
-    if(printCounter == 100) {
-      Serial.println(error);
-      printCounter = 0;
-    } else {
-      printCounter++;    
-    }
+    // if(printCounter == 100) {
+    //   Serial.println(error);
+    //   printCounter = 0;
+    // } else {
+    //   printCounter++;    
+    // }
 
     // Based on the error, do some proportional control
     leftMotor -= kp * error;
