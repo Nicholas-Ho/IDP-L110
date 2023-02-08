@@ -3,6 +3,10 @@
 #include "ColourDetector.h"
 #include <NewPing.h>
 
+#define triggerPin 3
+#define echoPin 2
+#define MAX_DISTANCE 20 //in centimetres
+
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
 
@@ -25,6 +29,13 @@ uint8_t maxPower = 220; // 255 is too much
 //Assign line sensor pins (left to right)
 int linePins[4] = {4, 5, 6, 7};
 int lineReadings[4] = {0, 0, 0, 0};
+
+//Tunnel Ultrasonic
+bool inTunnel = false;
+NewPing sonarTunnel(triggerPin, echoPin, MAX_DISTANCE);
+unsigned int pingDelay = 100; //100ms delay between pings
+unsigned long pingTimer;
+void setMotorProportions(float&, float&);
 
 //Ultrasonic
 int trigPin = 1;
@@ -88,6 +99,8 @@ void setup()
   // Setup blinky
   pinMode(blinkyPin, OUTPUT);
 
+  pingTimer = millis();
+
 }
 
 int printCounter = 0;
@@ -110,7 +123,22 @@ void loop()
     while(1);
   }
 
-  controller.control(lineReadings); //left and right motor proportions are set now
+  if(!inTunnel) //set motor proportions based on line sensor input
+  {
+    controller.control(lineReadings); //left and right motor proportions are set now
+  }
+  else //set motor proportions based on ultrasonic input
+  {
+    //TUNNEL
+    if(millis() > pingTimer)
+    {
+      pingTimer += pingDelay; //Set the time for the next ping, pingDelay in the future
+      sonarTunnel.ping_timer(setMotorProportions); //Send out the next ping, calling the function getDistance to check whether the ping has arrived and process it
+    }  
+
+  }
+
+  
 
   // ULTRASONIC
   long currMillis = millis();
@@ -139,7 +167,7 @@ void loop()
     case 2:
       // TODO: Replace with block-grabbing code
       leftMotorProportion = 0;
-      rightMotorProportion = 0;
+      rightMotorProportion = 0 ;
       detector.initialiseDetector();
       break;
 
@@ -238,6 +266,26 @@ void loop()
       rightMotor->run(RELEASE);
       break;
 
+  }
+
+}
+
+void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion)
+{ 
+  float distance = NO_ECHO;
+  float desired_distance = 5; // in cm
+  float kp = 0.1; //TODO: Tune this
+
+  if(sonarTunnel.check_timer())
+  {
+    Serial.println("Ping received");
+    float time = sonarTunnel.ping_result;
+    distance = time / (US_ROUNDTRIP_CM/2);
+
+    error = distance - desired_distance;
+
+    leftMotorProportion -= kp*error;
+    rightMotorProportion += kp*error;
   }
 
 }
