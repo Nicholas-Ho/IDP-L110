@@ -1,6 +1,6 @@
 #ifndef LINE_FOLLOWER_H
 #define LINE_FOLLOWER_H
-#include "Arduino.h"
+//#include "Arduino.h"
 
 // For clarity
 enum direction {straight, left, right, NONE, ERROR};
@@ -17,6 +17,8 @@ class LineFollower {
         LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
         int control(int lineReadings[4]);
 
+        bool inTunnel = false; //Indicate whether or not the robot is in the tunnel (for ultrasonic detector)
+
     private:
         float& leftMotor;
         float& rightMotor;
@@ -25,6 +27,8 @@ class LineFollower {
         const float basePower = 0.5; // Base power (before correction)
 
         direction probeStateJ = NONE; // State for probe junction
+        int branchCounter = 0; //Counting branches
+        int blockColour = -1; //Keeping track of block colour + whether or not it is picked up
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
 
@@ -38,7 +42,7 @@ class LineFollower {
         int moveStraight(int lineBinary);
         int probeJunction(int lineBinary);
         int probeEnd(int lineBinary);
-        int pathfind(direction dir);
+        int pathfind();
 
         float getTurningTime(float angle);
 

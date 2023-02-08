@@ -1,8 +1,6 @@
 #include "LineFollower.h"
 #include <Arduino.h>
 
-int blockColour = -1; //Temp variable to store block colour. 0: Blue, 1: Red, -1: no block
-
 // Helper stack function
 class Stack {
     private:
@@ -87,64 +85,78 @@ int LineFollower::detectEnd(int lineBinary) {
     return -1;
 }
 
-int LineFollower::pathfind(direction dir)
-{   /*
-    Function returns -1 if the robot should continue on, and 0 if it should turn into the home junction
-    Add 1 for every branch on the right, take one away for every branch on the left
-    Red delivery box -> 1
-    Green delivery box -> 0
+int LineFollower::pathfind()
+{   //Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
+    /*
+    If blockColour = -1, count up for each junction we see
+    If blockColour = 0. Count down for each branch seen, deliver at branchCount = 2
+    If blockColour = 1, Count down for each branch seen, deliver at branchCount = 0
     */
 
-    static int branchCounter = 0;
-    int res;
+    int res = -1;
 
-    //We have reached a potential home junction
-    if (dir == right)
-    {   
-        if (blockColour == 1) //Block is red
-        {
-            switch(branchCounter)   {
-                case 1:
-                    res = 0; //branchCounter is 1 so this is a red delivery box, return 0 because we want to turn here
-                    break;
-                default:
-                    res = -1;
-                    break;
-            }
-        }
-        else if (blockColour == 0) //Block is blue
-        {
-            switch(branchCounter)   {
-                case 0:
-                    res = 0; //branchCounter is 0 so this is a green delivery box, return 0 because we want to turn here
-                    break;
-                default:
-                    res = -1;
-                    break;
-            }
-        }
-        //Add 1 to branchCounter for the right branch
-        branchCounter++;
-    }
-    else if (dir == left)
+    switch(blockColour)
     {
-        //Subtract 1 from branchCounter for the left branch
-        branchCounter--;
-        res = -1; //We never want to turn into a left branch for home 
+        case -1:
+            branchCounter++;
+            break;
+        case 0:
+            branchCounter--;
+            if(branchCounter == 2) {res = 0;} //Green delivery area
+            break;
+        case 1:
+            branchCounter--;
+            if(branchCounter == 0) {res = 0;} //Red delivery area
+            break;
     }
 
     return res;
 }
 
+// int LineFollower::pathfind(direction dir)
+// {   /*
+//     Function returns -1 if the robot should continue on, and 0 if it should turn into the home junction
+//     Add 1 for every branch on the right, take one away for every branch on the left
+//     Red delivery box -> 1
+//     Green delivery box -> 0
+//     */
+
+//     static int branchCounter = 0;
+//     int res;
+
+//     if(dir == right)
+//     { 
+//         switch(blockColour)
+//         {
+//             case -1:
+//                 break;
+//             case 0: 
+//                 if(branchCounter == -1) {res = 0;}
+//                 break;
+//             case 1:
+//                 if(branchCounter == 1) {res = 0;}
+//                 break;          
+//         }
+//         branchCounter++;
+//     }
+//     else if (dir == left)
+//     {
+//         branchCounter--;
+//     }  
+
+//     return res;
+// }
+
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
     // came from interferring
     static Stack dirStack = Stack();
-    int turnHome;
+    int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
         if(dirStack.isEmpty() == true) {
             // Skip cross-junction
+            pathfindRes = pathfind();
             activeFunc = &moveStraight;
         }
 
@@ -161,19 +173,21 @@ int LineFollower::detectJunction(int lineBinary) {
         }
     } else if(lineBinary == 14) { // [1 1 1 0]
 
-        if (blockColour == -1)  { //If the block has not been picked up
-            // Move forward a tiny bit to ensure that it isn't a two-way junction
-            activeFunc = &probeJunction;
-            probeStateJ = left;
-            // If only one branch, turn 90 degrees to the left
-            // If two branches, move to two-branch logic
-            dirStack.add(left);
-        }
+        // if (blockColour == -1)  { //If the block has not been picked up, we want to explore the junction
+        //     // // Move forward a tiny bit to ensure that it isn't a two-way junction
+        //     // activeFunc = &probeJunction;
+        //     // probeStateJ = left;
+        //     // // If only one branch, turn 90 degrees to the left
+        //     // // If two branches, move to two-branch logic
+        //     // dirStack.add(left);
+        // }
 
-        else    {
-            turnHome = pathfind(left);
-            //TODO: Make sure the junction isn't counted twice (move forward immediately)
-        }
+        // else    { //If block picked up, we want to pathfind to delivery zone
+        //     pathfindRes = pathfind();
+        //     //TODO: Make sure the junction isn't counted twice (move forward immediately)
+        // }
+
+        pathfindRes = pathfind(); //On left junction, we only want to count up or down, we never need to explore
 
         return 0;
 
@@ -188,12 +202,12 @@ int LineFollower::detectJunction(int lineBinary) {
             dirStack.add(right);
         }
         else    {
-            turnHome = pathfind(right);
-            if(turnHome == 1) 
+            pathfindRes = pathfind();
+            if(pathfindRes == 0) 
             {
                 activeFunc = &turnRight; //Turn right into the delivery area
                 // TODO: Add block delivery function
-                dirStack.add(right);
+                dirStack.add(left);
             }
 
         return 0;
@@ -350,7 +364,7 @@ int LineFollower::probeEnd(int lineBinary) {
         count = 0;
         activeFunc = nullptr;
         return 0;
-    } else if(count == max_count) { // If not, turn around
+    } else if(count == max_count) { // If not, turn around //TODO: Add logic for tunnel detection
         count = 0;
         activeFunc = &turnAround;
         return 0;
