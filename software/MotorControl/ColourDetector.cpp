@@ -7,11 +7,7 @@ void ColourDetector::initialiseDetector() {
   }
 }
 
-// return 1: Blue
-// return 2: Red
-// return 0: No result (yet)
-// return -1: ERROR
-int ColourDetector::detectColour(int sensorVal) {
+Colour ColourDetector::detectColour(int sensorVal) {
   currMillis = millis();
 
   if(currMillis - prevMillis >= interval) {
@@ -37,7 +33,7 @@ int ColourDetector::detectColour(int sensorVal) {
           Serial.println("Blue!");
           state = 0;
           counter = 0; // Reset counter (just in case)
-          return 1;
+          return Blue;
         } else {
           counter++;
           if(counter % 100 == 0) {
@@ -48,18 +44,18 @@ int ColourDetector::detectColour(int sensorVal) {
             Serial.println("Red!");
             state = 0;
             counter = 0; // Reset counter (just in case)
-            return 2;
+            return Red;
           }
         }
         break;
       default:
         Serial.println("Illegal state encountered.");
-        return -1;
+        return ERROR;
         break;
     }
     prevMillis = currMillis;
   }
-  return 0;
+  return NONE;
 }
 
 int ColourDetector::getState() { // Just in case

@@ -11,8 +11,8 @@
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
 
 //Assign left and right motor pin channels
-int leftPin = 1;
-int rightPin = 2;
+const int leftPin = 1;
+const int rightPin = 2;
 
 //Instantiate the left and right DC motors
 Adafruit_DCMotor* leftMotor = motor_shield.getMotor(leftPin);
@@ -25,44 +25,49 @@ float rightMotorProportion = 0.5;
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
 
-uint8_t maxPower = 255; // 255 is too much
+const uint8_t maxPower = 220; // 255 is too much
 
 //Assign line sensor pins (left to right)
-int linePins[4] = {4, 5, 6, 7};
+const int linePins[4] = {4, 5, 6, 7};
 int lineReadings[4] = {0, 0, 0, 0};
+
+//Assign Tunnel Ultrasonic pins
+const int triggerPinTun = 3;
+const int echoPinTun = 2;
+const int MAX_DISTANCE_T = 20; //in centimetres
 
 //Tunnel Ultrasonic
 bool inTunnel = true;
 NewPing sonarTunnel(triggerPinTunnel, echoPinTunnel, MAX_DISTANCE_TUNNEL);
 void setMotorProportions(float&, float&);
 
-//Ultrasonic
-int trigPin = 1;
-int echoPin = 0;
-int maxDist = 10; //In cm
+//Block Ultrasonic
+const int trigPinB = 1;
+const int echoPinB = 0;
+const int maxDistB = 10; //In cm
 
-NewPing sonar(trigPin, echoPin, maxDist);
+NewPing sonarBlock(trigPinB, echoPinB, maxDistB);
 
 int blockState = 0; // State of using ultrasonic to detect a block
-int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
+const int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
 
-//Ultrasonic intervals
-int uSonicInterval = 50; // In milliseconds
+//Block Ultrasonic intervals
+const int uSonicInterval = 50; // In milliseconds
 long prevMillis = 0;
 
 // Pins for colour detection
-int colourPinIn = A0; // Analog In
-int bluePinOut = 13; // Digital Out
-int redPinOut = 12; // Digital Out
+const int colourPinIn = A1; // Analog In
+const int bluePinOut = 13; // Digital Out
+const int redPinOut = 12; // Digital Out
 
 int colourSensorVal = 0;
-int colour = 0; // 0: None (yet), 1: Blue, 2: Red, -1: ERROR
+Colour colour = 0;
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
 
 //Blinky pin
-int blinkyPin = 11;
+const int blinkyPin = 11;
 bool blinkyState = false; // True if blinking
 
 //Push Button
@@ -162,6 +167,7 @@ void loop()
   {
     //controller.control(lineReadings); //left and right motor proportions are set now
   }
+
    else //set motor proportions based on ultrasonic input
    {
      //TUNNEL
@@ -182,6 +188,25 @@ void loop()
   //     blockState = 0;
   //   }
   // }
+
+  // switch(blockState) {
+  //   case 0:
+  //     break;  
+
+  // ULTRASONIC
+  long currMillis = millis();
+  if(currMillis - prevMillis >= uSonicInterval) {
+    int dist = sonarBlock.ping_cm();
+    if(dist <= 8) {
+      // Something is within 7 cm
+      blockState = 1;
+    } else if(dist <= 4) {
+      // Something is within 4 cm
+      blockState = 2;
+    } else {
+      blockState = 0;
+    }
+  }
 
   // switch(blockState) {
   //   case 0:
@@ -208,13 +233,13 @@ void loop()
   colourSensorVal = analogRead(colourPinIn);
   colour = detector.detectColour(colourSensorVal);
 
-  if(colour == 1) { // Blue
+  if(colour == Blue) { // Blue
     digitalWrite(bluePinOut, HIGH);
     digitalWrite(redPinOut, LOW);
     delay(1000);
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, LOW);
-  } else if(colour == 2) { // Red
+  } else if(colour == Red) { // Red
     digitalWrite(bluePinOut, LOW);
     digitalWrite(redPinOut, HIGH);
     delay(1000);
@@ -302,7 +327,7 @@ void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion
 { 
   float distance = NO_ECHO;
   float desired_distance = 3.9; // in cm
-  float kp = 0.05;
+  float kp = 0.01;
 
   float time = sonarTunnel.ping() * 1e-6; //time in seconds
   float speed = 34300; //speed of sound in cm/s

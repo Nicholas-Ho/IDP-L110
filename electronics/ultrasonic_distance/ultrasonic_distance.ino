@@ -6,7 +6,7 @@ int trigPin = 3;
 int echoPin = 2;
 int maxDist = 20; // In cm
 
-NewPing sonar(trigPin, echoPin, maxDist);
+NewPing sonarBlock(trigPin, echoPin, maxDist);
 
 void setup() {
   Serial.begin(9600);
@@ -21,7 +21,7 @@ void loop() {
 }
 
 void detectUltrasonic() {
-  int dist = sonar.ping_cm();
+  int dist = sonarBlock.ping_cm();
   if(dist != 0) {
     Serial.print("Ping: ");
     Serial.print(dist);
