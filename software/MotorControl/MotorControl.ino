@@ -3,9 +3,9 @@
 #include "ColourDetector.h"
 #include <NewPing.h>
 
-#define triggerPin 3
-#define echoPin 2
-#define MAX_DISTANCE 20 //in centimetres
+#define triggerPinTunnel 3
+#define echoPinTunnel 2
+#define MAX_DISTANCE_TUNNEL 20 //in centimetres
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
@@ -19,22 +19,21 @@ Adafruit_DCMotor* leftMotor = motor_shield.getMotor(leftPin);
 Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 
 //Initialising the variables representing the output of the controller (proportions of maximum power)
-float leftMotorProportion, rightMotorProportion;
+float leftMotorProportion = 0.5;
+float rightMotorProportion = 0.5;
 
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
 
-uint8_t maxPower = 220; // 255 is too much
+uint8_t maxPower = 255; // 255 is too much
 
 //Assign line sensor pins (left to right)
 int linePins[4] = {4, 5, 6, 7};
 int lineReadings[4] = {0, 0, 0, 0};
 
 //Tunnel Ultrasonic
-bool inTunnel = false;
-NewPing sonarTunnel(triggerPin, echoPin, MAX_DISTANCE);
-unsigned int pingDelay = 100; //100ms delay between pings
-unsigned long pingTimer;
+bool inTunnel = true;
+NewPing sonarTunnel(triggerPinTunnel, echoPinTunnel, MAX_DISTANCE_TUNNEL);
 void setMotorProportions(float&, float&);
 
 //Ultrasonic
@@ -66,6 +65,12 @@ ColourDetector detector = ColourDetector();
 int blinkyPin = 11;
 bool blinkyState = false; // True if blinking
 
+//Push Button
+uint8_t buttonPressed = 1;
+int buttonPin = 10;
+
+int startup = 0; //Start up sequence state (0 -> Button not pressed, 1 -> Button pressed, robot needs to move, 2 -> End of start up sequence)
+
 void setup() 
 {
 
@@ -84,8 +89,6 @@ void setup()
   leftMotor->run(RELEASE);
   rightMotor->run(RELEASE);
 
-  controller.turnLeft(0);
-
   // Setup line sensors
   pinMode(linePins[0], INPUT);
   pinMode(linePins[1], INPUT);
@@ -99,7 +102,8 @@ void setup()
   // Setup blinky
   pinMode(blinkyPin, OUTPUT);
 
-  pingTimer = millis();
+  //Setup push button
+  pinMode(buttonPin, INPUT_PULLUP);
 
 }
 
@@ -107,6 +111,37 @@ int printCounter = 0;
 
 void loop() 
 { 
+  // //Read button input every 50ms
+  // while (startup == 0)
+  // { 
+  //   buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
+    // if(buttonPressed == LOW)
+    // {
+    //   startup = 1;
+    //   break;
+    // }
+  //   delay(50); 
+  // }
+
+  // while(startup == 1)
+  // {
+  //   //Run forward for 2 seconds
+  //   leftMotor-> setSpeed(120);
+  //   rightMotor -> setSpeed(120);
+  //   leftMotor -> run(FORWARD);
+  //   rightMotor -> run(FORWARD);
+  //   delay(2000);
+
+  //   //Turn to the left (2 seconds)    
+  //   leftMotor -> run(BACKWARD)
+  //   delay(2000);
+
+  //   //Stop  
+  //   leftMotor -> run(RELEASE);
+  //   rightMotor -> run(RELEASE);
+    // startup = 2;
+  // }
+
   String readingPrint = "";
 
   // LINE CONTROL
@@ -125,56 +160,49 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    controller.control(lineReadings); //left and right motor proportions are set now
+    //controller.control(lineReadings); //left and right motor proportions are set now
   }
-  else //set motor proportions based on ultrasonic input
-  {
-    //TUNNEL
-    if(millis() > pingTimer)
-    {
-      pingTimer += pingDelay; //Set the time for the next ping, pingDelay in the future
-      sonarTunnel.ping_timer(setMotorProportions); //Send out the next ping, calling the function getDistance to check whether the ping has arrived and process it
-    }  
+   else //set motor proportions based on ultrasonic input
+   {
+     //TUNNEL
+      setMotorProportions(leftMotorProportion, rightMotorProportion);    
+   }
 
-  }
+  // // ULTRASONIC
+  // long currMillis = millis();
+  // if(currMillis - prevMillis >= uSonicInterval) {
+  //   int dist = sonar.ping_cm();
+  //   if(dist <= 8) {
+  //     // Something is within 7 cm
+  //     blockState = 1;
+  //   } else if(dist <= 4) {
+  //     // Something is within 4 cm
+  //     blockState = 2;
+  //   } else {
+  //     blockState = 0;
+  //   }
+  // }
 
-  
-
-  // ULTRASONIC
-  long currMillis = millis();
-  if(currMillis - prevMillis >= uSonicInterval) {
-    int dist = sonar.ping_cm();
-    if(dist <= 8) {
-      // Something is within 7 cm
-      blockState = 1;
-    } else if(dist <= 4) {
-      // Something is within 4 cm
-      blockState = 2;
-    } else {
-      blockState = 0;
-    }
-  }
-
-  switch(blockState) {
-    case 0:
-      break;
+  // switch(blockState) {
+  //   case 0:
+  //     break;
     
-    case 1:
-      leftMotorProportion /= slowRatio;
-      rightMotorProportion /= slowRatio;
-      break;
+  //   case 1:
+  //     leftMotorProportion /= slowRatio;
+  //     rightMotorProportion /= slowRatio;
+  //     break;
 
-    case 2:
-      // TODO: Replace with block-grabbing code
-      leftMotorProportion = 0;
-      rightMotorProportion = 0 ;
-      detector.initialiseDetector();
-      break;
+  //   case 2:
+  //     // TODO: Replace with block-grabbing code
+  //     leftMotorProportion = 0;
+  //     rightMotorProportion = 0 ;
+  //     detector.initialiseDetector();
+  //     break;
 
-    default:
-      Serial.println("Invalid block state.");
-      break;
-  }
+  //   default:
+  //     Serial.println("Invalid block state.");
+  //     break;
+  // }
 
   // COLOUR DETECTION
   colourSensorVal = analogRead(colourPinIn);
@@ -216,7 +244,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
+    //Serial.println(readingPrint);
     // Serial.println("Left Motor Proportion: ");
     // Serial.println(leftMotorProportion);
     // Serial.println("Left Motor Speed:");
@@ -232,18 +260,18 @@ void loop()
   //Setting the magnitude of the motor speeds
   leftMotor->setSpeed(leftMotorSpeed);
   rightMotor->setSpeed(rightMotorSpeed);
-  // leftMotor->setSpeed(0);
-  // rightMotor->setSpeed(0);
+  //leftMotor->setSpeed(0);
+  //rightMotor->setSpeed(0);
 
   //Using the sign of the motor proportion to set the direction of motion for each wheel
   switch(leftSign)
   {
     case 0:
-      leftMotor->run(BACKWARD);
+      leftMotor->run(FORWARD);
       break;
 
     case 1: 
-      leftMotor->run(FORWARD);
+      leftMotor->run(BACKWARD);
       break;
 
     default:
@@ -255,11 +283,11 @@ void loop()
   switch(rightSign)
   {
     case 0:
-      rightMotor->run(BACKWARD);
+      rightMotor->run(FORWARD);
       break;
 
     case 1: 
-      rightMotor->run(FORWARD);
+      rightMotor->run(BACKWARD);
       break;
 
     default:
@@ -273,19 +301,32 @@ void loop()
 void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion)
 { 
   float distance = NO_ECHO;
-  float desired_distance = 5; // in cm
-  float kp = 0.1; //TODO: Tune this
+  float desired_distance = 3.9; // in cm
+  float kp = 0.05;
 
-  if(sonarTunnel.check_timer())
-  {
-    Serial.println("Ping received");
-    float time = sonarTunnel.ping_result;
-    distance = time / (US_ROUNDTRIP_CM/2);
+  float time = sonarTunnel.ping() * 1e-6; //time in seconds
+  float speed = 34300; //speed of sound in cm/s
+  distance = (speed*time)/2;
+  
+  int counter = 0;
 
-    error = distance - desired_distance;
+  float error = distance - desired_distance;
 
-    leftMotorProportion -= kp*error;
-    rightMotorProportion += kp*error;
-  }
+  leftMotorProportion -= kp*error;
+  rightMotorProportion += kp*error;
 
+  // if(counter = 1000000000)
+  // {
+  //   Serial.println("Distance measured: ");
+  //   Serial.println(distance);
+  
+  //   Serial.println("Error: ");
+  //   Serial.println(error);  
+  //   counter = 0;
+  // }
+  // else
+  // {
+  //   counter++;
+  // }
+  
 }

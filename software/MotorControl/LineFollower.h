@@ -6,7 +6,6 @@ class LineFollower {
     public:
         LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
         int control(int lineReadings[4]);
-        int turnLeft(int lineBinary);
 
     private:
         float& leftMotor;
@@ -21,7 +20,7 @@ class LineFollower {
         int detectJunction(int lineBinary);
         int followLine(int lineBinary);
 
-        //int turnLeft(int lineBinary);
+        int turnLeft(int lineBinary);
         int turnRight(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
