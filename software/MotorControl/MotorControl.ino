@@ -37,7 +37,7 @@ const int echoPinTun = 2;
 const int MAX_DISTANCE_T = 20; //in centimetres
 
 //Tunnel Ultrasonic
-bool inTunnel = true;
+bool inTunnel = false;
 NewPing sonarTunnel(triggerPinTunnel, echoPinTunnel, MAX_DISTANCE_TUNNEL);
 void setMotorProportions(float&, float&);
 
@@ -110,42 +110,44 @@ void setup()
   //Setup push button
   pinMode(buttonPin, INPUT_PULLUP);
 
+  Serial.println("Ready");
+
+  //Read button input every 50ms
+  while (startup == 0)
+  { 
+    buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
+    if(buttonPressed == HIGH)
+    {
+      startup = 2;
+      break;
+    }
+    delay(50); 
+  }
+
+  Serial.println("Starting....");
+
+  while(startup == 1)
+  {
+    //Run forward for 2 seconds
+    leftMotor-> setSpeed(150);
+    rightMotor -> setSpeed(150);
+    leftMotor -> run(FORWARD);
+    rightMotor -> run(FORWARD);
+    delay(6500);
+
+    turnLeft();
+
+    //Stop  
+    leftMotor -> run(RELEASE);
+    rightMotor -> run(RELEASE);
+    startup = 2;
+  }
 }
 
 int printCounter = 0;
 
 void loop() 
 { 
-  // //Read button input every 50ms
-  // while (startup == 0)
-  // { 
-  //   buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
-    // if(buttonPressed == LOW)
-    // {
-    //   startup = 1;
-    //   break;
-    // }
-  //   delay(50); 
-  // }
-
-  // while(startup == 1)
-  // {
-  //   //Run forward for 2 seconds
-  //   leftMotor-> setSpeed(120);
-  //   rightMotor -> setSpeed(120);
-  //   leftMotor -> run(FORWARD);
-  //   rightMotor -> run(FORWARD);
-  //   delay(2000);
-
-  //   //Turn to the left (2 seconds)    
-  //   leftMotor -> run(BACKWARD)
-  //   delay(2000);
-
-  //   //Stop  
-  //   leftMotor -> run(RELEASE);
-  //   rightMotor -> run(RELEASE);
-    // startup = 2;
-  // }
 
   String readingPrint = "";
 
@@ -165,7 +167,7 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    //controller.control(lineReadings); //left and right motor proportions are set now
+    controller.control(lineReadings); //left and right motor proportions are set now
   }
 
    else //set motor proportions based on ultrasonic input
@@ -292,11 +294,11 @@ void loop()
   switch(leftSign)
   {
     case 0:
-      leftMotor->run(FORWARD);
+      leftMotor->run(BACKWARD);
       break;
 
     case 1: 
-      leftMotor->run(BACKWARD);
+      leftMotor->run(FORWARD);
       break;
 
     default:
@@ -308,11 +310,11 @@ void loop()
   switch(rightSign)
   {
     case 0:
-      rightMotor->run(FORWARD);
+      rightMotor->run(BACKWARD);
       break;
 
     case 1: 
-      rightMotor->run(BACKWARD);
+      rightMotor->run(FORWARD);
       break;
 
     default:
@@ -354,4 +356,13 @@ void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion
   //   counter++;
   // }
   
+}
+
+void turnLeft() {
+  //Turn left 90 degrees
+  leftMotor-> setSpeed(150);
+  rightMotor -> setSpeed(150);
+  leftMotor -> run(BACKWARD);
+  rightMotor -> run(FORWARD);
+  delay(2600);
 }

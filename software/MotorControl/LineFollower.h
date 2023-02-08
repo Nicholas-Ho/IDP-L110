@@ -4,7 +4,7 @@
 class LineFollower {
 
     public:
-        LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM) {};
+        LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM){};
         int control(int lineReadings[4]);
 
     private:
