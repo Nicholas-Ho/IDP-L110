@@ -3,16 +3,12 @@
 #include "ColourDetector.h"
 #include <NewPing.h>
 
-#define triggerPin 3
-#define echoPin 2
-#define MAX_DISTANCE 20 //in centimetres
-
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
 
 //Assign left and right motor pin channels
-int leftPin = 1;
-int rightPin = 2;
+const int leftPin = 1;
+const int rightPin = 2;
 
 //Instantiate the left and right DC motors
 Adafruit_DCMotor* leftMotor = motor_shield.getMotor(leftPin);
@@ -24,37 +20,42 @@ float leftMotorProportion, rightMotorProportion;
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
 
-uint8_t maxPower = 220; // 255 is too much
+const uint8_t maxPower = 220; // 255 is too much
 
 //Assign line sensor pins (left to right)
-int linePins[4] = {4, 5, 6, 7};
+const int linePins[4] = {4, 5, 6, 7};
 int lineReadings[4] = {0, 0, 0, 0};
+
+//Assign Tunnel Ultrasonic pins
+const int triggerPinTun = 3;
+const int echoPinTun = 2;
+const int MAX_DISTANCE_T = 20; //in centimetres
 
 //Tunnel Ultrasonic
 bool inTunnel = false;
-NewPing sonarTunnel(triggerPin, echoPin, MAX_DISTANCE);
-unsigned int pingDelay = 100; //100ms delay between pings
+NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE);
+const unsigned int pingDelay = 100; //100ms delay between pings
 unsigned long pingTimer;
 void setMotorProportions(float&, float&);
 
-//Ultrasonic
-int trigPin = 1;
-int echoPin = 0;
-int maxDist = 10; //In cm
+//Block Ultrasonic
+const int trigPinB = 1;
+const int echoPinB = 0;
+const int maxDistB = 10; //In cm
 
-NewPing sonar(trigPin, echoPin, maxDist);
+NewPing sonarBlock(trigPinB, echoPinB, maxDistB);
 
 int blockState = 0; // State of using ultrasonic to detect a block
-int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
+const int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
 
-//Ultrasonic intervals
-int uSonicInterval = 50; // In milliseconds
+//Block Ultrasonic intervals
+const int uSonicInterval = 50; // In milliseconds
 long prevMillis = 0;
 
 // Pins for colour detection
-int colourPinIn = A0; // Analog In
-int bluePinOut = 13; // Digital Out
-int redPinOut = 12; // Digital Out
+const int colourPinIn = A1; // Analog In
+const int bluePinOut = 13; // Digital Out
+const int redPinOut = 12; // Digital Out
 
 int colourSensorVal = 0;
 Colour colour = 0;
@@ -63,7 +64,7 @@ Colour colour = 0;
 ColourDetector detector = ColourDetector();
 
 //Blinky pin
-int blinkyPin = 11;
+const int blinkyPin = 11;
 bool blinkyState = false; // True if blinking
 
 void setup() 
@@ -143,7 +144,7 @@ void loop()
   // ULTRASONIC
   long currMillis = millis();
   if(currMillis - prevMillis >= uSonicInterval) {
-    int dist = sonar.ping_cm();
+    int dist = sonarBlock.ping_cm();
     if(dist <= 8) {
       // Something is within 7 cm
       blockState = 1;
