@@ -3,9 +3,7 @@
 #include "ColourDetector.h"
 #include <NewPing.h>
 
-#define triggerPinTunnel 3
-#define echoPinTunnel 2
-#define MAX_DISTANCE_TUNNEL 20 //in centimetres
+#include "MotorControl.h"
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
@@ -22,9 +20,6 @@ Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 float leftMotorProportion = 0.5;
 float rightMotorProportion = 0.5;
 
-//Instantiate a controller object, passing in references to the left and right motor objects
-LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion);
-
 const uint8_t maxPower = 220; // 255 is too much
 
 //Assign line sensor pins (left to right)
@@ -38,8 +33,11 @@ const int MAX_DISTANCE_T = 20; //in centimetres
 
 //Tunnel Ultrasonic
 bool inTunnel = false;
-NewPing sonarTunnel(triggerPinTunnel, echoPinTunnel, MAX_DISTANCE_TUNNEL);
+NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE_T);
 void setMotorProportions(float&, float&);
+
+//Instantiate a controller object, passing in references to the left and right motor objects
+LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel);
 
 //Block Ultrasonic
 const int trigPinB = 1;
@@ -49,7 +47,7 @@ const int maxDistB = 10; //In cm
 NewPing sonarBlock(trigPinB, echoPinB, maxDistB);
 
 int blockState = 0; // State of using ultrasonic to detect a block
-const int slowRatio = 3; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
+const int slowRatio = 2; // Ratio to slow down the motors by if block is detected (eg if slowRatio is 3, slow down by a factor of 3)
 
 //Block Ultrasonic intervals
 const int uSonicInterval = 50; // In milliseconds
@@ -57,17 +55,19 @@ long prevMillis = 0;
 
 // Pins for colour detection
 const int colourPinIn = A1; // Analog In
-const int bluePinOut = 13; // Digital Out
-const int redPinOut = 12; // Digital Out
+const int bluePinOut = 8; // Digital Out
+const int redPinOut = 9; // Digital Out
 
 int colourSensorVal = 0;
 Colour colour = 0;
+
+bool haveBlock = false;
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
 
 //Blinky pin
-const int blinkyPin = 11;
+const int blinkyPin = 12;
 bool blinkyState = false; // True if blinking
 
 //Push Button
@@ -118,7 +118,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 2;
+      startup = 2; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -135,13 +135,14 @@ void setup()
     rightMotor -> run(FORWARD);
     delay(6500);
 
-    turnLeft();
+    turnLeftArduino();
 
     //Stop  
     leftMotor -> run(RELEASE);
     rightMotor -> run(RELEASE);
     startup = 2;
   }
+  Serial.println("Running.");
 }
 
 int printCounter = 0;
@@ -167,86 +168,90 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    controller.control(lineReadings); //left and right motor proportions are set now
+    // controller.control(lineReadings); //left and right motor proportions are set now
+    leftMotorProportion = 0.5;
+    rightMotorProportion = 0.5;
   }
-
    else //set motor proportions based on ultrasonic input
    {
      //TUNNEL
       setMotorProportions(leftMotorProportion, rightMotorProportion);    
    }
 
-  // // ULTRASONIC
-  // long currMillis = millis();
-  // if(currMillis - prevMillis >= uSonicInterval) {
-  //   int dist = sonar.ping_cm();
-  //   if(dist <= 8) {
-  //     // Something is within 7 cm
-  //     blockState = 1;
-  //   } else if(dist <= 4) {
-  //     // Something is within 4 cm
-  //     blockState = 2;
-  //   } else {
-  //     blockState = 0;
-  //   }
-  // }
-
-  // switch(blockState) {
-  //   case 0:
-  //     break;  
-
   // ULTRASONIC
   long currMillis = millis();
   if(currMillis - prevMillis >= uSonicInterval) {
-    int dist = sonarBlock.ping_cm();
-    if(dist <= 8) {
-      // Something is within 7 cm
-      blockState = 1;
-    } else if(dist <= 4) {
-      // Something is within 4 cm
-      blockState = 2;
-    } else {
-      blockState = 0;
+    if(!haveBlock) {
+      int dist = sonarBlock.ping_cm();    
+      if(dist == 0) {
+        // Nothing
+      } else if(dist <= 3) {
+        // Something is within 3 cm
+        detector.initialiseDetector();
+        leftMotorProportion /= slowRatio;
+        rightMotorProportion /= slowRatio;
+      } else if(dist <= 6) {
+        // Something is within 6 cm
+        leftMotorProportion /= slowRatio;
+        rightMotorProportion /= slowRatio;
+      }
+      prevMillis = currMillis;
     }
   }
-
-  // switch(blockState) {
-  //   case 0:
-  //     break;
-    
-  //   case 1:
-  //     leftMotorProportion /= slowRatio;
-  //     rightMotorProportion /= slowRatio;
-  //     break;
-
-  //   case 2:
-  //     // TODO: Replace with block-grabbing code
-  //     leftMotorProportion = 0;
-  //     rightMotorProportion = 0 ;
-  //     detector.initialiseDetector();
-  //     break;
-
-  //   default:
-  //     Serial.println("Invalid block state.");
-  //     break;
-  // }
 
   // COLOUR DETECTION
   colourSensorVal = analogRead(colourPinIn);
   colour = detector.detectColour(colourSensorVal);
 
-  if(colour == Blue) { // Blue
-    digitalWrite(bluePinOut, HIGH);
-    digitalWrite(redPinOut, LOW);
-    delay(1000);
-    digitalWrite(bluePinOut, LOW);
-    digitalWrite(redPinOut, LOW);
-  } else if(colour == Red) { // Red
-    digitalWrite(bluePinOut, LOW);
-    digitalWrite(redPinOut, HIGH);
-    delay(1000);
-    digitalWrite(bluePinOut, LOW);
-    digitalWrite(redPinOut, LOW);
+  if(!haveBlock) {
+    if(colour == Blue) { // Blue
+      haveBlock = true;
+
+      // Display coloured LED
+      digitalWrite(bluePinOut, HIGH);
+      digitalWrite(redPinOut, LOW);
+
+      // Stop movement
+      leftMotor -> run(RELEASE);
+      rightMotor -> run(RELEASE);
+
+      // Stop blinky
+      digitalWrite(blinkyPin, LOW);
+      blinkyState = false;
+
+      delay(6000);
+
+
+      digitalWrite(bluePinOut, LOW);
+      digitalWrite(redPinOut, LOW);
+      digitalWrite(blinkyPin, HIGH);
+      blinkyState = true;
+      turnAroundArduino();
+      moveStraightArduino();
+    } else if(colour == Red) { // Red
+      haveBlock = true;
+
+      // Show coloured LED
+      digitalWrite(bluePinOut, LOW);
+      digitalWrite(redPinOut, HIGH);
+
+      // Stop movement
+      leftMotor -> run(RELEASE);
+      rightMotor -> run(RELEASE);
+
+      // Stop blinky
+      digitalWrite(blinkyPin, LOW);
+      blinkyState = false;
+
+      delay(6000);
+
+      digitalWrite(bluePinOut, LOW);
+      digitalWrite(redPinOut, LOW);
+      digitalWrite(blinkyPin, HIGH);
+      blinkyState = true;
+      turnAroundArduino();
+      moveStraightArduino();
+    }
   }
 
   //Protecting against invalid motor proportions that would cause motor speeds to exceed the max
@@ -331,9 +336,7 @@ void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion
   float desired_distance = 3.9; // in cm
   float kp = 0.01;
 
-  float time = sonarTunnel.ping() * 1e-6; //time in seconds
-  float speed = 34300; //speed of sound in cm/s
-  distance = (speed*time)/2;
+  distance = getTunnelDistance();
   
   int counter = 0;
 
@@ -341,6 +344,15 @@ void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion
 
   leftMotorProportion -= kp*error;
   rightMotorProportion += kp*error;
+
+  // Check if the line has been found
+  int lineReadingSum = 0;
+  for(int i=0; i<4; i++) {
+    lineReadingSum += lineReadings[i];
+  }
+  if(lineReadings > 0) {
+    inTunnel = false;
+  }
 
   // if(counter = 1000000000)
   // {
@@ -358,11 +370,47 @@ void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion
   
 }
 
-void turnLeft() {
+float getTunnelDistance() {
+  float distance = NO_ECHO;
+  float time = sonarTunnel.ping() * 1e-6; //time in seconds
+  float speed = 34300; //speed of sound in cm/s
+  distance = (speed*time)/2;
+
+  return distance;
+}
+
+void turnLeftArduino() {
   //Turn left 90 degrees
   leftMotor-> setSpeed(150);
   rightMotor -> setSpeed(150);
   leftMotor -> run(BACKWARD);
   rightMotor -> run(FORWARD);
   delay(2600);
+}
+
+void turnRightArduino() {
+  //Turn right 90 degrees
+  leftMotor-> setSpeed(150);
+  rightMotor -> setSpeed(150);
+  leftMotor -> run(FORWARD);
+  rightMotor -> run(BACKWARD);
+  delay(2600);
+}
+
+void turnAroundArduino() {
+  //Turn 180 degrees
+  leftMotor-> setSpeed(150);
+  rightMotor -> setSpeed(150);
+  leftMotor -> run(FORWARD);
+  rightMotor -> run(BACKWARD);
+  delay(5200);
+}
+
+void moveStraightArduino() {
+  //Move straight
+  leftMotor-> setSpeed(75);
+  rightMotor -> setSpeed(75);
+  leftMotor -> run(FORWARD);
+  rightMotor -> run(FORWARD);
+  delay(2000);
 }

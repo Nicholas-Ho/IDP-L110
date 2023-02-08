@@ -1,9 +1,9 @@
 #include "colour_detector.h"
 
 // Analogue pin
-int colourPinIn = A0;
-int bluePinOut = 7;
-int redPinOut = 8;
+int colourPinIn = A1;
+int bluePinOut = 8;
+int redPinOut = 9;
 int isBlue = 0;
 int isRed = 0;
 
@@ -18,9 +18,9 @@ void setup() {
   pinMode(redPinOut, OUTPUT);
   digitalWrite(bluePinOut, HIGH);
   digitalWrite(redPinOut, HIGH);
-  delay(1000);
+  delay(100000);
   digitalWrite(bluePinOut, HIGH);
-  digitalWrite(redPinOut, LOW);
+  digitalWrite(redPinOut, LOW);  
   Serial.begin(9600);
 }
 

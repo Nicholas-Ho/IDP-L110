@@ -4,12 +4,14 @@
 class LineFollower {
 
     public:
-        LineFollower(float &leftM, float &rightM) : leftMotor(leftM), rightMotor(rightM){};
+        LineFollower(float &leftM, float &rightM, bool& tunnel) : leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel) {};
         int control(int lineReadings[4]);
 
     private:
         float& leftMotor;
         float& rightMotor;
+
+        bool& inTunnel;
 
         float kp = 0.2; // In proportion of maximum power
         float basePower = 0.5; // Base power (before correction)
@@ -25,6 +27,7 @@ class LineFollower {
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int probeJunction(int lineBinary);
+        int probeEnd(int lineBinary);
 
 };
 

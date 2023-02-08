@@ -1,4 +1,5 @@
 #include "LineFollower.h"
+#include "MotorControl.h"
 
 // For T-junction logic
 enum direction {straight, left, right, ERROR};
@@ -185,54 +186,33 @@ int LineFollower::followLine(int lineBinary) {
 }
 
 int LineFollower::turnLeft(int _) {
-
-    //Setting motors to turn left
-    leftMotor = -basePower;
-    rightMotor = basePower;
-
-    // //TODO: Interrupt control to get RPM from rotary encoder
-    // float wheelAngularSpeed = 10;
-
-    // //Calculating duration of 90 degree turn
-    // float angularVelocity = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
-    // float turningTime = 3.141/angularVelocity;
-
-    // while ((millis() - start_time) < turningTime) {}
-
-    moveStraight(_);
+    turnLeftArduino();
+    moveStraightArduino();
+    activeFunc = nullptr;
     return 0;
 }
 
 int LineFollower::turnRight(int _) {
-    // TODO: Turn 90 degrees to the right
-    moveStraight(_);
+    turnRightArduino();
+    moveStraightArduino();
+    activeFunc = nullptr;
     return 0;
 }
 
 int LineFollower::turnAround(int _) {
-    // TODO: Turn 180 degrees
+    turnAroundArduino();
+    activeFunc = nullptr;
     return 0;
 }
 
 int LineFollower::moveStraight(int _) {
-    static int count = 0;
-    static const int max_count = 10; // TODO: Tune the duration of the movement
-
-    if(count == max_count) {
-        count = 0;
-        activeFunc = nullptr;
-        return 0;
-    } else {
-        leftMotor = basePower;
-        rightMotor = basePower;
-        count++;
-        return 0;
-    }
+    moveStraightArduino();
+    activeFunc = nullptr;
 }
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 10; // TODO: Tune the duration of the probe
+    static const int max_count = 10000; // TODO: Tune the duration of the probe
 
     if(lineBinary == 15 || count == max_count) {
         count = 0;
@@ -241,6 +221,37 @@ int LineFollower::probeJunction(int lineBinary) {
     } else {
         leftMotor = basePower / 3;
         rightMotor = basePower / 3;
+        count++;
+        return 0;
+    }
+}
+
+int LineFollower::probeEnd(int lineBinary) {
+    static int count = 0;
+    static const int max_count = 10000; // TODO: Tune the duration of the probe
+
+    if(count >= max_count) { // No line, end of branch
+        count = 0;
+        activeFunc = nullptr;
+        turnAroundArduino();
+        moveStraightArduino();
+        return 0;
+    } else if(lineBinary != 0) {
+        count = 0;
+        activeFunc = nullptr; // Resume normal function
+        return 0;
+    } else {
+        leftMotor = basePower / 3;
+        rightMotor = basePower / 3;
+
+        float uSonicDist = getTunnelDistance();
+        if(uSonicDist != 0.0 && uSonicDist < 6.0) { // In tunnel!
+            inTunnel = true;
+            count = 0;
+            activeFunc = nullptr;
+            return 0;
+        }
+
         count++;
         return 0;
     }
