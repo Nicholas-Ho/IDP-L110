@@ -18,7 +18,7 @@ void setup() {
   pinMode(redPinOut, OUTPUT);
   digitalWrite(bluePinOut, HIGH);
   digitalWrite(redPinOut, HIGH);
-  delay(100000);
+  delay(1000);
   digitalWrite(bluePinOut, HIGH);
   digitalWrite(redPinOut, LOW);  
   Serial.begin(9600);

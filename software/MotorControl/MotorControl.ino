@@ -1,9 +1,9 @@
+#include "MotorControl.h"
+
 #include <Adafruit_MotorShield.h>
 #include "LineFollower.h"
 #include "ColourDetector.h"
 #include <NewPing.h>
-
-#include "MotorControl.h"
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
@@ -34,7 +34,7 @@ const int MAX_DISTANCE_T = 20; //in centimetres
 //Tunnel Ultrasonic
 bool inTunnel = false;
 NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE_T);
-void setMotorProportions(float&, float&);
+void tunnelControl(float&, float&);
 
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel);
@@ -175,7 +175,7 @@ void loop()
    else //set motor proportions based on ultrasonic input
    {
      //TUNNEL
-      setMotorProportions(leftMotorProportion, rightMotorProportion);    
+      tunnelControl(leftMotorProportion, rightMotorProportion);    
    }
 
   // ULTRASONIC
@@ -204,51 +204,9 @@ void loop()
   colour = detector.detectColour(colourSensorVal);
 
   if(!haveBlock) {
-    if(colour == Blue) { // Blue
-      haveBlock = true;
-
-      // Display coloured LED
-      digitalWrite(bluePinOut, HIGH);
-      digitalWrite(redPinOut, LOW);
-
-      // Stop movement
-      leftMotor -> run(RELEASE);
-      rightMotor -> run(RELEASE);
-
-      // Stop blinky
-      digitalWrite(blinkyPin, LOW);
-      blinkyState = false;
-
-      delay(6000);
-
-
-      digitalWrite(bluePinOut, LOW);
-      digitalWrite(redPinOut, LOW);
-      digitalWrite(blinkyPin, HIGH);
-      blinkyState = true;
-      turnAroundArduino();
-      moveStraightArduino();
-    } else if(colour == Red) { // Red
-      haveBlock = true;
-
-      // Show coloured LED
-      digitalWrite(bluePinOut, LOW);
-      digitalWrite(redPinOut, HIGH);
-
-      // Stop movement
-      leftMotor -> run(RELEASE);
-      rightMotor -> run(RELEASE);
-
-      // Stop blinky
-      digitalWrite(blinkyPin, LOW);
-      blinkyState = false;
-
-      delay(6000);
-
-      digitalWrite(bluePinOut, LOW);
-      digitalWrite(redPinOut, LOW);
-      digitalWrite(blinkyPin, HIGH);
-      blinkyState = true;
+    if(colour == Blue || colour == Red) { // Blue
+      Serial.println(colour);
+      displayColour(colour);
       turnAroundArduino();
       moveStraightArduino();
     }
@@ -330,7 +288,7 @@ void loop()
 
 }
 
-void setMotorProportions(float& leftMotorProportion, float& rightMotorProportion)
+void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 { 
   float distance = NO_ECHO;
   float desired_distance = 3.9; // in cm
@@ -413,4 +371,33 @@ void moveStraightArduino() {
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
   delay(2000);
+}
+
+void displayColour(Colour col) {
+  haveBlock = true;
+
+  if(col == Blue) {
+    // Display coloured LED
+    digitalWrite(bluePinOut, HIGH);
+    digitalWrite(redPinOut, LOW);
+  } else if(col == Red) {
+    digitalWrite(bluePinOut, LOW);
+    digitalWrite(redPinOut, HIGH);
+  }
+
+  // Stop movement
+  leftMotor -> run(RELEASE);
+  rightMotor -> run(RELEASE);
+
+  // Stop blinky
+  digitalWrite(blinkyPin, LOW);
+  blinkyState = false;
+
+  delay(6000);
+
+
+  digitalWrite(bluePinOut, LOW);
+  digitalWrite(redPinOut, LOW);
+  digitalWrite(blinkyPin, HIGH);
+  blinkyState = true;
 }

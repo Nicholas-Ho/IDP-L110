@@ -50,7 +50,7 @@ Colour ColourDetector::detectColour(int sensorVal) {
         break;
       default:
         Serial.println("Illegal state encountered.");
-        return ERROR;
+        return ERROR_C;
         break;
     }
     prevMillis = currMillis;

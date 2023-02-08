@@ -1,7 +1,10 @@
+#ifndef COLOUR_DETECTOR_H
+#define COLOUR_DETECTOR_H
+
 #include "circular_buffer.h"
 #include <Arduino.h>
 
-enum Colour {NONE, Blue, Red, ERROR};
+enum Colour {NONE, Blue, Red, ERROR_C};
 
 class ColourDetector {
     private:
@@ -20,8 +23,8 @@ class ColourDetector {
         long currMillis = 0;
         long prevMillis = 0;
 
-        // Counter, if approximately 3 seconds is up, declare red
-        int counterThresh = 100;
+        // Counter, if approximately 1.5 seconds is up, declare red
+        int counterThresh = 150;
         int counter = 0;
 
     public:
@@ -29,3 +32,5 @@ class ColourDetector {
         Colour detectColour(int sensorVal);
         int getState();
 };
+
+#endif
