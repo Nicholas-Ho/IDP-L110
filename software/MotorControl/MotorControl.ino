@@ -237,6 +237,8 @@ void loop()
     //Serial.println(readingPrint);
     // Serial.println("Left Motor Proportion: ");
     // Serial.println(leftMotorProportion);
+    // Serial.println("Right Motor Proportion: ");
+    // Serial.println(rightMotorProportion);
     // Serial.println("Left Motor Speed:");
     // Serial.println(leftMotorSpeed);
     // Serial.println("Left Motor Sign: ");

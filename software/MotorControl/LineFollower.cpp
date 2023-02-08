@@ -1,5 +1,6 @@
 #include "LineFollower.h"
 #include "MotorControl.h"
+#include <Arduino.h>
 
 // For T-junction logic
 enum direction {straight, left, right, ERROR};
@@ -54,14 +55,20 @@ float min(float a, float b)
   return a <= b ? a : b;  
 }
 
+float LineFollower::getTurningTime(float angle)
+{   //Calculating duration of turn
+    float robotAngularSpeed = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
+    float turningTime = angle/(robotAngularSpeed); //pi divided by angular speed
+}
+
 int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
     int lineBinary = lineReadings[0]*8 + lineReadings[1]*4 + lineReadings[2]*2 + lineReadings[3];
     if(activeFunc==nullptr) {
         int res = -1;
-        res = detectEnd(lineBinary);
+        // res = detectEnd(lineBinary);
         if(res == 0) {return 0;}
-        res = detectJunction(lineBinary);
+        // res = detectJunction(lineBinary);
         if(res == 0) {return 0;}
         res = followLine(lineBinary);
         return res;
@@ -74,6 +81,7 @@ int LineFollower::control(int lineReadings[4]) {
 int LineFollower::detectEnd(int lineBinary) {
 
     if(lineBinary <= 0) { // [0 0 0 0]
+        // TODO: Add end detection leeway (probeEnd)
 
         // Turn 180 degrees
         // During turn, suspend control
@@ -84,17 +92,79 @@ int LineFollower::detectEnd(int lineBinary) {
     return -1;
 }
 
+int LineFollower::pathfind()
+{   //Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
+    /*
+    If blockColour = -1, count up for each junction we see
+    If blockColour = 0. Count down for each branch seen, deliver at branchCount = 2
+    If blockColour = 1, Count down for each branch seen, deliver at branchCount = 0
+    */
+
+    int res = -1;
+
+    switch(blockColour)
+    {
+        case -1:
+            branchCounter++;
+            break;
+        case 0:
+            branchCounter--;
+            if(branchCounter == 2) {res = 0;} //Green delivery area
+            break;
+        case 1:
+            branchCounter--;
+            if(branchCounter == 0) {res = 0;} //Red delivery area
+            break;
+    }
+
+    return res;
+}
+
+// int LineFollower::pathfind(direction dir)
+// {   /*
+//     Function returns -1 if the robot should continue on, and 0 if it should turn into the home junction
+//     Add 1 for every branch on the right, take one away for every branch on the left
+//     Red delivery box -> 1
+//     Green delivery box -> 0
+//     */
+
+//     static int branchCounter = 0;
+//     int res;
+
+//     if(dir == right)
+//     { 
+//         switch(blockColour)
+//         {
+//             case -1:
+//                 break;
+//             case 0: 
+//                 if(branchCounter == -1) {res = 0;}
+//                 break;
+//             case 1:
+//                 if(branchCounter == 1) {res = 0;}
+//                 break;          
+//         }
+//         branchCounter++;
+//     }
+//     else if (dir == left)
+//     {
+//         branchCounter--;
+//     }  
+
+//     return res;
+// }
+
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
-    // came from from interferring
+    // came from interferring
     static Stack dirStack = Stack();
+    int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
         if(dirStack.isEmpty() == true) {
-            // Visit the left branch, the right branch then continue down the path
-            dirStack.add(left);
-            dirStack.add(straight);
-            dirStack.add(right);
+            // Skip cross-junction
+            pathfindRes = pathfind();
+            activeFunc = &moveStraight;
         }
 
         direction nextDir = dirStack.pop();
@@ -109,24 +179,49 @@ int LineFollower::detectJunction(int lineBinary) {
             activeFunc = &moveStraight;
         }
     } else if(lineBinary == 14) { // [1 1 1 0]
-        // Move forward a tiny bit to ensure that it isn't a two-way junction
-        activeFunc = &probeJunction;
-        // If only one branch, turn 90 degrees to the left
-        // If two branches, move to two-branch logic
-        activeFunc = &turnLeft;
-        dirStack.add(left);
+
+        // if (blockColour == -1)  { //If the block has not been picked up, we want to explore the junction
+        //     // // Move forward a tiny bit to ensure that it isn't a two-way junction
+        //     // activeFunc = &probeJunction;
+        //     // probeStateJ = left;
+        //     // // If only one branch, turn 90 degrees to the left
+        //     // // If two branches, move to two-branch logic
+        //     // dirStack.add(left);
+        // }
+
+        // else    { //If block picked up, we want to pathfind to delivery zone
+        //     pathfindRes = pathfind();
+        //     //TODO: Make sure the junction isn't counted twice (move forward immediately)
+        // }
+
+        pathfindRes = pathfind(); //On left junction, we only want to count up or down, we never need to explore
+
         return 0;
+
     } else if(lineBinary == 7) { // [0 1 1 1]
-        // Move forward a tiny bit to ensure that it isn't a two-way junction
-        activeFunc = &probeJunction;
-        // If only one branch, turn 90 degrees to the right
-        // If two branches, move to two-branch logic
-        activeFunc = &turnRight;
-        dirStack.add(right);
+        if (blockColour == -1)
+        {
+            // Move forward a tiny bit to ensure that it isn't a two-way junction
+            activeFunc = &probeJunction;
+            probeStateJ = right;
+            // If only one branch, turn 90 degrees to the right
+            // If two branches, move to two-branch logic
+            dirStack.add(right);
+        }
+        else    {
+            pathfindRes = pathfind();
+            if(pathfindRes == 0) 
+            {
+                activeFunc = &turnRight; //Turn right into the delivery area
+                // TODO: Add block delivery function
+                dirStack.add(left);
+            }
+
         return 0;
     }
 
     return -1;
+  }
 }
 
 int LineFollower::followLine(int lineBinary) {
@@ -174,6 +269,13 @@ int LineFollower::followLine(int lineBinary) {
     // Update lastError for switch default
     lastError = error;
 
+    // if(printCounter == 100) {
+    //   Serial.println(error);
+    //   printCounter = 0;
+    // } else {
+    //   printCounter++;    
+    // }
+
     // Based on the error, do some proportional control
     leftMotor -= kp * error;
     rightMotor += kp * error;
@@ -216,7 +318,14 @@ int LineFollower::probeJunction(int lineBinary) {
 
     if(lineBinary == 15 || count == max_count) {
         count = 0;
-        activeFunc = nullptr;
+        if(probeStateJ == left) {
+            activeFunc = &turnLeft;
+        } else if(probeStateJ == right) {
+            activeFunc = &turnRight;
+        } else {
+            activeFunc = nullptr;
+        }
+        probeStateJ = NONE;
         return 0;
     } else {
         leftMotor = basePower / 3;
@@ -239,6 +348,10 @@ int LineFollower::probeEnd(int lineBinary) {
     } else if(lineBinary != 0) {
         count = 0;
         activeFunc = nullptr; // Resume normal function
+        return 0;
+    } else if(count == max_count) { // If not, turn around //TODO: Add logic for tunnel detection
+        count = 0;
+        activeFunc = &turnAround;
         return 0;
     } else {
         leftMotor = basePower / 3;
