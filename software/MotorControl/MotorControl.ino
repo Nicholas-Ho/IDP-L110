@@ -199,11 +199,10 @@ void loop()
 
   // COLOUR DETECTION
   colourSensorVal = analogRead(colourPinIn);
-  colour = detector.detectColour(colourSensorVal);
 
   if(!haveBlock) {
-    if(colour == Blue || colour == Red) { // Blue
-      Serial.println(colour);
+    colour = detector.detectColour(colourSensorVal);
+    if(colour == Blue || colour == Red) {
       displayColour(colour);
       turnAroundArduino();
       moveStraightArduino(500);
@@ -232,7 +231,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    // Serial.println(readingPrint);
+    Serial.println(readingPrint);
     // Serial.println("Left Motor Proportion: ");
     // Serial.println(leftMotorProportion);
     // Serial.println("Right Motor Proportion: ");

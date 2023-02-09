@@ -40,9 +40,10 @@ int LineFollower::pathfind()
               if(branchCounter == 0) {res = 0;} //Red delivery area
               break;
       }
+    }
+
     Serial.println("Branch Counter: ");
     Serial.println(branchCounter);
-    }
     return res;
 }
 
@@ -61,8 +62,10 @@ int LineFollower::detectJunction(int lineBinary) {
     int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
-        // If haveBlock == true, reverse the stack (left becomes right and vice versa)
-        dirStack.reverseStack();
+        // If haveBlock == true, reverse the stack (left becomes right and vice versa) 
+        if(haveBlock && (colour == Red || colour == Blue)) {
+          dirStack.reverseStack();
+        }
         
         direction nextDir = dirStack.pop();
 
@@ -82,29 +85,18 @@ int LineFollower::detectJunction(int lineBinary) {
 
         pathfindRes = pathfind(); //On left junction, we only want to count up or down, we never need to explore
         activeFunc = &moveStraight;
+        Serial.println("Left");
 
         return 0;
 
     } else if(lineBinary == 7) { // [0 1 1 1]
-        if (!haveBlock)
-        {
-            // Move forward a tiny bit to ensure that it isn't a two-way junction
-            activeFunc = &probeJunction;
-            probeStateJ = right;
-            // If only one branch, turn 90 degrees to the right
-            // If two branches, move to two-branch logic
-        }
-        else    {
-            pathfindRes = pathfind();
-            if(pathfindRes == 0) 
-            {
-                activeFunc = &turnRight; //Turn right into the delivery area
-                // TODO: Add block delivery function
-                dirStack.add(left);
-            }
+        // Move forward a tiny bit to ensure that it isn't a two-way junction
+        activeFunc = &probeJunction;
+        probeStateJ = right;
+        // If only one branch, turn 90 degrees to the right
+        // If two branches, move to two-branch logic
 
-            return 0;
-        }
+        return 0;
     
     }
     return -1;
@@ -205,19 +197,30 @@ int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
     static const int max_count = 100; // TODO: Tune the duration of the probe
 
+    Serial.println(lineBinary);    
+
     if(count == max_count) {
         count = 0;
+        int pathfindRes = pathfind();
         if(probeStateJ == left) {
             activeFunc = &turnLeft;  
             dirStack.add(left);          
         } else if(probeStateJ == right) {
+          if(!haveBlock) {
             activeFunc = &turnRight;
             dirStack.add(right);
+          } else if(haveBlock && pathfindRes == 0) 
+            {
+                activeFunc = &turnRight; //Turn right into the delivery area
+                // TODO: Add block delivery function
+            } else {
+            // haveBlock but not the delivery area
+            activeFunc = &moveStraight;
+          }
         } else {
             Serial.println("Error: Junction detected, but no probe state.");
             activeFunc = nullptr;
         }
-        pathfind();
         probeStateJ = NONE_D;
         return 0;      
     } else if(lineBinary == 15) {
