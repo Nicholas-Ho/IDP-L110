@@ -55,7 +55,7 @@ Colour ColourDetector::detectColour(int sensorVal) {
     }
     prevMillis = currMillis;
   }
-  return NONE;
+  return NONE_C;
 }
 
 int ColourDetector::getState() { // Just in case

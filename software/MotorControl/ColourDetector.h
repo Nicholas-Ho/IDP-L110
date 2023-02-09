@@ -4,7 +4,7 @@
 #include "circular_buffer.h"
 #include <Arduino.h>
 
-enum Colour {NONE, Blue, Red, ERROR_C};
+enum Colour {NONE_C, Blue, Red, ERROR_C};
 
 class ColourDetector {
     private:

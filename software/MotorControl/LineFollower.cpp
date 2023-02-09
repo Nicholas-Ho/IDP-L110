@@ -2,12 +2,6 @@
 #include "MotorControl.h"
 #include <Arduino.h>
 
-// For T-junction logic
-enum direction {straight, left, right, ERROR};
-
-const float wheelSpan; //Distance between wheels
-const float wheelRadius;
-
 // Helper stack function
 class Stack {
     private:
@@ -39,7 +33,7 @@ class Stack {
                 size--;
                 return stack[size];
             } else {
-                return ERROR;
+                return ERROR_D;
             }
         }
 };
@@ -325,7 +319,7 @@ int LineFollower::probeJunction(int lineBinary) {
         } else {
             activeFunc = nullptr;
         }
-        probeStateJ = NONE;
+        probeStateJ = NONE_D;
         return 0;
     } else {
         leftMotor = basePower / 3;
