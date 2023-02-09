@@ -36,9 +36,6 @@ bool inTunnel = false;
 NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE_T);
 void tunnelControl(float&, float&);
 
-//Instantiate a controller object, passing in references to the left and right motor objects
-LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel);
-
 //Block Ultrasonic
 const int trigPinB = 1;
 const int echoPinB = 0;
@@ -58,10 +55,12 @@ const int colourPinIn = A1; // Analog In
 const int bluePinOut = 8; // Digital Out
 const int redPinOut = 9; // Digital Out
 
-int colourSensorVal = 0;
-Colour colour = NONE_C;
-
+Colour colour = 0;
 bool haveBlock = false;
+int colourSensorVal = 0;
+
+//Instantiate a controller object, passing in references to the left and right motor objects
+LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, haveBlock, colour);
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
@@ -128,7 +127,7 @@ void setup()
 
   while(startup == 1)
   {
-    //Run forward for 2 seconds
+    //Run forward
     leftMotor-> setSpeed(150);
     rightMotor -> setSpeed(150);
     leftMotor -> run(FORWARD);
@@ -377,6 +376,17 @@ void moveStraightArduino(int delayTime) {
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
   delay(delayTime);
+}
+
+void reverseArduino()
+{
+  //Reverse
+  leftMotor -> setSpeed(75);
+  rightMotor->setSpeed(75);
+  leftMotor -> run(BACKWARD);
+  rightMotor -> run(BACKWARD);
+  delay(5000);
+  
 }
 
 void displayColour(Colour col) {
