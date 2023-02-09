@@ -110,7 +110,7 @@ void setup()
   //Setup push button
   pinMode(buttonPin, INPUT_PULLUP);
 
-  Serial.println("Ready");
+  Serial.println("Ready.");
 
   //Read button input every 50ms
   while (startup == 0)
@@ -142,7 +142,7 @@ void setup()
     rightMotor -> run(RELEASE);
     startup = 2;
   }
-  Serial.println("Running.");
+  Serial.println("Robot is running.");
 }
 
 int printCounter = 0;
@@ -167,9 +167,9 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    // controller.control(lineReadings); //left and right motor proportions are set now
-    leftMotorProportion = 0.5;
-    rightMotorProportion = 0.5;
+    controller.control(lineReadings); //left and right motor proportions are set now
+    // leftMotorProportion = 0.5;
+    // rightMotorProportion = 0.5;
   }
    else //set motor proportions based on ultrasonic input
    {
@@ -207,7 +207,7 @@ void loop()
       Serial.println(colour);
       displayColour(colour);
       turnAroundArduino();
-      moveStraightArduino();
+      moveStraightArduino(500);
     }
   }
 
@@ -233,11 +233,11 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
-    Serial.println("Left Motor Proportion: ");
-    Serial.println(leftMotorProportion);
-    Serial.println("Right Motor Proportion: ");
-    Serial.println(rightMotorProportion);
+    // Serial.println(readingPrint);
+    // Serial.println("Left Motor Proportion: ");
+    // Serial.println(leftMotorProportion);
+    // Serial.println("Right Motor Proportion: ");
+    // Serial.println(rightMotorProportion);
     // Serial.println("Left Motor Speed:");
     // Serial.println(leftMotorSpeed);
     // Serial.println("Left Motor Sign: ");
@@ -292,7 +292,10 @@ void loop()
 void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 { 
   const static int interval = 100;
-  static long tunnelMillis = 0;  
+  static long tunnelMillis = 0;
+  static int counter = 0;
+  const static int counter_max = 100;
+  const float basePower = 0.5;
   
   float distance = NO_ECHO;
   float desired_distance = 3.9; // in cm
@@ -305,6 +308,8 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 
     float error = distance - desired_distance;
 
+    leftMotorProportion = basePower;
+    rightMotorProportion = basePower;
     leftMotorProportion -= kp*error;
     rightMotorProportion += kp*error;
 
@@ -312,13 +317,20 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   }
 
   // Check if the line has been found
-  // int lineReadingSum = 0;
-  // for(int i=0; i<4; i++) {
-  //   lineReadingSum += lineReadings[i];
-  // }
-  // if(lineReadings > 0) {
-  //   inTunnel = false;
-  // }
+  int lineReadingSum = 0;
+  for(int i=0; i<4; i++) {
+    lineReadingSum += lineReadings[i];
+  }
+  if(lineReadingSum > 0) {
+    counter++;
+  } else {
+    counter = 0;
+  }
+  if(counter >= counter_max) {
+    Serial.println("Out of tunnel");
+    inTunnel = false;
+    counter = 0;    
+  }
 
   // if(counter = 1000000000)
   // {
@@ -372,13 +384,13 @@ void turnAroundArduino() {
   delay(5200);
 }
 
-void moveStraightArduino() {
+void moveStraightArduino(int delayTime) {
   //Move straight
   leftMotor-> setSpeed(75);
   rightMotor -> setSpeed(75);
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
-  delay(500);
+  delay(delayTime);
 }
 
 void displayColour(Colour col) {

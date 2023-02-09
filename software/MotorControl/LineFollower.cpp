@@ -22,6 +22,7 @@ class Stack {
             if(size < max_size) {
                 stack[size] = dir;
                 size++;
+                Serial.println(size);
                 return 0;
             } else {
                 return -1;
@@ -31,6 +32,7 @@ class Stack {
         direction pop() {
             if(size > 0) {
                 size--;
+                Serial.println(size);
                 return stack[size];
             } else {
                 return ERROR_D;
@@ -49,20 +51,14 @@ float min(float a, float b)
   return a <= b ? a : b;  
 }
 
-float LineFollower::getTurningTime(float angle)
-{   //Calculating duration of turn
-    float robotAngularSpeed = (2*wheelAngularSpeed*wheelRadius)/wheelSpan;
-    float turningTime = angle/(robotAngularSpeed); //pi divided by angular speed
-}
-
 int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
     int lineBinary = lineReadings[0]*8 + lineReadings[1]*4 + lineReadings[2]*2 + lineReadings[3];
     if(activeFunc==nullptr) {
         int res = -1;
-        // res = probeEnd(lineBinary);
+        res = detectEnd(lineBinary);
         if(res == 0) {return 0;}
-        //res = detectJunction(lineBinary);
+        res = detectJunction(lineBinary);
         if(res == 0) {return 0;}
         res = followLine(lineBinary);
         return res;
@@ -96,43 +92,19 @@ int LineFollower::pathfind()
             if(branchCounter == 0) {res = 0;} //Red delivery area
             break;
     }
+    // Serial.println(branchCounter);
 
     return res;
 }
 
-// int LineFollower::pathfind(direction dir)
-// {   /*
-//     Function returns -1 if the robot should continue on, and 0 if it should turn into the home junction
-//     Add 1 for every branch on the right, take one away for every branch on the left
-//     Red delivery box -> 1
-//     Green delivery box -> 0
-//     */
+int LineFollower::detectEnd(int lineBinary) {
+    if(lineBinary == 0) {
+      activeFunc = &probeEnd;
+      return 0;
+    }
 
-//     static int branchCounter = 0;
-//     int res;
-
-//     if(dir == right)
-//     { 
-//         switch(blockColour)
-//         {
-//             case -1:
-//                 break;
-//             case 0: 
-//                 if(branchCounter == -1) {res = 0;}
-//                 break;
-//             case 1:
-//                 if(branchCounter == 1) {res = 0;}
-//                 break;          
-//         }
-//         branchCounter++;
-//     }
-//     else if (dir == left)
-//     {
-//         branchCounter--;
-//     }  
-
-//     return res;
-// }
+    return -1;
+}
 
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
@@ -141,8 +113,8 @@ int LineFollower::detectJunction(int lineBinary) {
     int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
-
         direction nextDir = dirStack.pop();
+        // Serial.println(nextDir);
         if(nextDir == left) {
             // Turn 90 degrees to the left
             activeFunc = &turnLeft;
@@ -152,24 +124,14 @@ int LineFollower::detectJunction(int lineBinary) {
         } else if(nextDir == straight) {
             // Move straight for a second (suspend control!)
             activeFunc = &moveStraight;
+        } else {
+            pathfindRes = pathfind();
+            activeFunc = &moveStraight;
         }
     } else if(lineBinary == 14) { // [1 1 1 0]
 
-        // if (blockColour == -1)  { //If the block has not been picked up, we want to explore the junction
-        //     // // Move forward a tiny bit to ensure that it isn't a two-way junction
-        //     // activeFunc = &probeJunction;
-        //     // probeStateJ = left;
-        //     // // If only one branch, turn 90 degrees to the left
-        //     // // If two branches, move to two-branch logic
-        //     // dirStack.add(left);
-        // }
-
-        // else    { //If block picked up, we want to pathfind to delivery zone
-        //     pathfindRes = pathfind();
-        //     //TODO: Make sure the junction isn't counted twice (move forward immediately)
-        // }
-
         pathfindRes = pathfind(); //On left junction, we only want to count up or down, we never need to explore
+        activeFunc = &moveStraight;
 
         return 0;
 
@@ -192,11 +154,11 @@ int LineFollower::detectJunction(int lineBinary) {
                 dirStack.add(left);
             }
 
-        return 0;
+            return 0;
+        }
+    
     }
-
     return -1;
-  }
 }
 
 int LineFollower::followLine(int lineBinary) {
@@ -244,13 +206,6 @@ int LineFollower::followLine(int lineBinary) {
     // Update lastError for switch default
     lastError = error;
 
-    // if(printCounter == 100) {
-    //   Serial.println(error);
-    //   printCounter = 0;
-    // } else {
-    //   printCounter++;    
-    // }
-
     // Based on the error, do some proportional control
     leftMotor -= kp * error;
     rightMotor += kp * error;
@@ -263,15 +218,17 @@ int LineFollower::followLine(int lineBinary) {
 }
 
 int LineFollower::turnLeft(int _) {
+    moveStraightArduino(500);
     turnLeftArduino();
-    moveStraightArduino();
+    moveStraightArduino(500);
     activeFunc = nullptr;
     return 0;
 }
 
 int LineFollower::turnRight(int _) {
+    moveStraightArduino(500);
     turnRightArduino();
-    moveStraightArduino();
+    moveStraightArduino(500);
     activeFunc = nullptr;
     return 0;
 }
@@ -283,66 +240,73 @@ int LineFollower::turnAround(int _) {
 }
 
 int LineFollower::moveStraight(int _) {
-    moveStraightArduino();
+    moveStraightArduino(2000);
     activeFunc = nullptr;
 }
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 10000; // TODO: Tune the duration of the probe
+    static const int max_count = 200; // TODO: Tune the duration of the probe
 
-    if(lineBinary == 15 || count == max_count) {
+    if(count == max_count) {
         count = 0;
         if(probeStateJ == left) {
-            activeFunc = &turnLeft;
+            activeFunc = &turnLeft;            
         } else if(probeStateJ == right) {
             activeFunc = &turnRight;
         } else {
+            Serial.println("Error: Junction detected, but no probe state.");
             activeFunc = nullptr;
         }
+        pathfind();
+        probeStateJ = NONE_D;
+        return 0;      
+    } else if(lineBinary == 15) {
+        count = 0;
+        activeFunc = nullptr;
         probeStateJ = NONE_D;
         return 0;
+    } else if((probeStateJ == left && lineBinary != 14) || (probeStateJ == right && lineBinary != 7)) {
+        // False alarm, continue
+        probeStateJ = NONE_D;
+        activeFunc = nullptr;
+        return 0;
     } else {
-        leftMotor = basePower / 3;
-        rightMotor = basePower / 3;
+        leftMotor = basePower / 1.5;
+        rightMotor = basePower / 1.5;
         count++;
         return 0;
     }
 }
 
-int LineFollower::probeEnd(int lineBinary) {
-    leftMotor = basePower*1.5;
-    rightMotor = basePower*1.5;  
-    // static int count = 0;
-    // static const int max_count = 200; // TODO: Tune the duration of the probe
-    // // Serial.println(count);
+int LineFollower::probeEnd(int lineBinary) { 
+    static int count = 0;
+    static const int max_count = 200;
 
-    // if(count >= max_count) { // No line, end of branch
-    //     Serial.println("Turning");
-    //     count = 0;
-    //     activeFunc = nullptr;
-    //     turnAroundArduino();
-    //     moveStraightArduino();
-    //     Serial.println("Complete");
-    //     return 0;
-    // } else if(lineBinary != 0) {
-    //     count = 0;
-    //     activeFunc = nullptr; // Resume normal function
-    //     return 0;
-    // } else {
-    //     leftMotor = basePower / 2;
-    //     rightMotor = basePower / 2;
+    if(count >= max_count) { // No line, end of branch
+        count = 0;
+        activeFunc = nullptr;
+        turnAroundArduino();
+        moveStraightArduino(500);
+        return 0;
+    } else if(lineBinary != 0) {
+        count = 0;
+        activeFunc = nullptr; // Resume normal function
+        return 0;
+    } else {
+        leftMotor = basePower / 2;
+        rightMotor = basePower / 2;
 
-    //     float uSonicDist = getTunnelDistance();
-    //     if(uSonicDist != 0.0 && uSonicDist < 15.0) { // In tunnel!
-    //         inTunnel = true;
-    //         count = 0;
-    //         activeFunc = nullptr;
-    //         Serial.println("Entering tunnel");
-    //         return 0;
-    //     }
+        float uSonicDist = getTunnelDistance();
+        if(uSonicDist != 0.0 && uSonicDist < 6.0) { // In tunnel!
+            inTunnel = true;
+            count = 0;
+            activeFunc = nullptr;
+            Serial.println("Entering tunnel");
+            return 0;
+        }
 
-    //     count++;
-    //     return 0;
-    // }
+        count++;
+        return 0;
+    }
 }

@@ -8,7 +8,7 @@ void displayColour(Colour col);
 void turnLeftArduino();
 void turnRightArduino();
 void turnAroundArduino();
-void moveStraightArduino();
+void moveStraightArduino(int delayTime);
 
 float getTunnelDistance();
 
