@@ -1,55 +1,5 @@
 #include "LineFollower.h"
 #include "MotorControl.h"
-#include <Arduino.h>
-
-// Helper stack function
-class Stack {
-    private:
-        int size = 0;
-        direction stack[3]; // Of size 3
-        const int max_size = 3;
-
-    public:
-        bool isEmpty() {
-            if(size > 0) {
-                return false;
-            } else {
-                return true;
-            }
-        }
-
-        int add(direction dir) {
-            if(size < max_size) {
-                stack[size] = dir;
-                size++;
-                Serial.println(size);
-                return 0;
-            } else {
-                return -1;
-            }
-        }
-
-        direction pop() {
-            if(size > 0) {
-                size--;
-                Serial.println(size);
-                return stack[size];
-            } else {
-                return ERROR_D;
-            }
-        }
-};
-
-//Helper functions
-float max(float a, float b)
-{
-  return a >= b ? a : b;  
-}
-
-float min(float a, float b)
-{
-  return a <= b ? a : b;  
-}
 
 int LineFollower::control(int lineReadings[4]) {
     // Convert to binary representations
@@ -92,7 +42,10 @@ int LineFollower::pathfind()
             if(branchCounter == 0) {res = 0;} //Red delivery area
             break;
     }
-    // Serial.println(branchCounter);
+    Serial.println(branchCounter);
+    if(branchCounter==5) {
+      displayColour(2);
+    }
 
     return res;
 }
@@ -109,7 +62,6 @@ int LineFollower::detectEnd(int lineBinary) {
 int LineFollower::detectJunction(int lineBinary) {
     // Note: When turning 90 degrees, turn then move forward for a second to prevent the branch the robot
     // came from interferring
-    static Stack dirStack = Stack();
     int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
@@ -143,7 +95,6 @@ int LineFollower::detectJunction(int lineBinary) {
             probeStateJ = right;
             // If only one branch, turn 90 degrees to the right
             // If two branches, move to two-branch logic
-            dirStack.add(right);
         }
         else    {
             pathfindRes = pathfind();
@@ -246,14 +197,16 @@ int LineFollower::moveStraight(int _) {
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 200; // TODO: Tune the duration of the probe
+    static const int max_count = 150; // TODO: Tune the duration of the probe
 
     if(count == max_count) {
         count = 0;
         if(probeStateJ == left) {
-            activeFunc = &turnLeft;            
+            activeFunc = &turnLeft;  
+            dirStack.add(left);          
         } else if(probeStateJ == right) {
             activeFunc = &turnRight;
+            dirStack.add(right);
         } else {
             Serial.println("Error: Junction detected, but no probe state.");
             activeFunc = nullptr;
@@ -309,4 +262,46 @@ int LineFollower::probeEnd(int lineBinary) {
         count++;
         return 0;
     }
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Implementation of helper functions
+bool Stack::isEmpty() {
+    if(size > 0) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+int Stack::add(direction dir) {
+    if(size < max_size) {
+        stack[size] = dir;
+        size++;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+direction Stack::pop() {
+    if(size > 0) {
+        size--;
+        return stack[size];
+    } else {
+        return ERROR_D;
+    }
+}
+
+//Helper functions
+float max(float a, float b)
+{
+  return a >= b ? a : b;  
+}
+
+float min(float a, float b)
+{
+  return a <= b ? a : b;  
 }

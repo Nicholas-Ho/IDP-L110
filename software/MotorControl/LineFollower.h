@@ -1,6 +1,6 @@
 #ifndef LINE_FOLLOWER_H
 #define LINE_FOLLOWER_H
-//#include "Arduino.h"
+#include "Arduino.h"
 
 // For clarity
 enum direction {straight, left, right, NONE_D, ERROR_D};
@@ -10,6 +10,25 @@ const float wheelSpan = 10; //Distance between wheels
 const float wheelRadius = 10;
 const float wheelRPM = 10; //Currently set to 10 RPM
 const float wheelAngularSpeed = (wheelRPM*2*3.14/60);
+
+// Helper stack class
+class Stack {
+    private:
+        int size = 0;
+        direction stack[3]; // Of size 3
+        const int max_size = 3;
+
+    public:
+        bool isEmpty();
+        int add(direction dir);
+        direction pop();
+};
+
+//Helper functions
+float max(float a, float b);
+float min(float a, float b);
+
+
 
 class LineFollower {
 
@@ -26,6 +45,7 @@ class LineFollower {
         const float kp = 0.233; // In proportion of maximum power
         const float basePower = 0.5; // Base power (before correction)
 
+        Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction
         int branchCounter = 0; //Counting branches
         int blockColour = -1; //Keeping track of block colour + whether or not it is picked up
