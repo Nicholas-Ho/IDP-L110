@@ -60,29 +60,15 @@ int LineFollower::control(int lineReadings[4]) {
     int lineBinary = lineReadings[0]*8 + lineReadings[1]*4 + lineReadings[2]*2 + lineReadings[3];
     if(activeFunc==nullptr) {
         int res = -1;
-        // res = detectEnd(lineBinary);
+        // res = probeEnd(lineBinary);
         if(res == 0) {return 0;}
-        // res = detectJunction(lineBinary);
+        //res = detectJunction(lineBinary);
         if(res == 0) {return 0;}
         res = followLine(lineBinary);
         return res;
     } else {
         (this->*activeFunc)(lineBinary);
     }
-    return -1;
-}
-
-int LineFollower::detectEnd(int lineBinary) {
-
-    if(lineBinary <= 0) { // [0 0 0 0]
-        // TODO: Add end detection leeway (probeEnd)
-
-        // Turn 180 degrees
-        // During turn, suspend control
-        activeFunc = &turnAround;
-        return 0;
-    }
-
     return -1;
 }
 
@@ -155,11 +141,6 @@ int LineFollower::detectJunction(int lineBinary) {
     int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
-        if(dirStack.isEmpty() == true) {
-            // Skip cross-junction
-            pathfindRes = pathfind();
-            activeFunc = &moveStraight;
-        }
 
         direction nextDir = dirStack.pop();
         if(nextDir == left) {
@@ -330,36 +311,38 @@ int LineFollower::probeJunction(int lineBinary) {
 }
 
 int LineFollower::probeEnd(int lineBinary) {
-    static int count = 0;
-    static const int max_count = 10000; // TODO: Tune the duration of the probe
+    leftMotor = basePower*1.5;
+    rightMotor = basePower*1.5;  
+    // static int count = 0;
+    // static const int max_count = 200; // TODO: Tune the duration of the probe
+    // // Serial.println(count);
 
-    if(count >= max_count) { // No line, end of branch
-        count = 0;
-        activeFunc = nullptr;
-        turnAroundArduino();
-        moveStraightArduino();
-        return 0;
-    } else if(lineBinary != 0) {
-        count = 0;
-        activeFunc = nullptr; // Resume normal function
-        return 0;
-    } else if(count == max_count) { // If not, turn around //TODO: Add logic for tunnel detection
-        count = 0;
-        activeFunc = &turnAround;
-        return 0;
-    } else {
-        leftMotor = basePower / 3;
-        rightMotor = basePower / 3;
+    // if(count >= max_count) { // No line, end of branch
+    //     Serial.println("Turning");
+    //     count = 0;
+    //     activeFunc = nullptr;
+    //     turnAroundArduino();
+    //     moveStraightArduino();
+    //     Serial.println("Complete");
+    //     return 0;
+    // } else if(lineBinary != 0) {
+    //     count = 0;
+    //     activeFunc = nullptr; // Resume normal function
+    //     return 0;
+    // } else {
+    //     leftMotor = basePower / 2;
+    //     rightMotor = basePower / 2;
 
-        float uSonicDist = getTunnelDistance();
-        if(uSonicDist != 0.0 && uSonicDist < 6.0) { // In tunnel!
-            inTunnel = true;
-            count = 0;
-            activeFunc = nullptr;
-            return 0;
-        }
+    //     float uSonicDist = getTunnelDistance();
+    //     if(uSonicDist != 0.0 && uSonicDist < 15.0) { // In tunnel!
+    //         inTunnel = true;
+    //         count = 0;
+    //         activeFunc = nullptr;
+    //         Serial.println("Entering tunnel");
+    //         return 0;
+    //     }
 
-        count++;
-        return 0;
-    }
+    //     count++;
+    //     return 0;
+    // }
 }

@@ -148,8 +148,7 @@ void setup()
 int printCounter = 0;
 
 void loop() 
-{ 
-
+{   
   String readingPrint = "";
 
   // LINE CONTROL
@@ -234,11 +233,11 @@ void loop()
   }
 
   if(printCounter == 100) {
-    //Serial.println(readingPrint);
-    // Serial.println("Left Motor Proportion: ");
-    // Serial.println(leftMotorProportion);
-    // Serial.println("Right Motor Proportion: ");
-    // Serial.println(rightMotorProportion);
+    Serial.println(readingPrint);
+    Serial.println("Left Motor Proportion: ");
+    Serial.println(leftMotorProportion);
+    Serial.println("Right Motor Proportion: ");
+    Serial.println(rightMotorProportion);
     // Serial.println("Left Motor Speed:");
     // Serial.println(leftMotorSpeed);
     // Serial.println("Left Motor Sign: ");
@@ -292,27 +291,34 @@ void loop()
 
 void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 { 
+  const static int interval = 100;
+  static long tunnelMillis = 0;  
+  
   float distance = NO_ECHO;
   float desired_distance = 3.9; // in cm
   float kp = 0.01;
 
-  distance = getTunnelDistance();
-  
-  int counter = 0;
+  if(millis() - tunnelMillis >= interval) {
+    distance = getTunnelDistance();
+    
+    int counter = 0;
 
-  float error = distance - desired_distance;
+    float error = distance - desired_distance;
 
-  leftMotorProportion -= kp*error;
-  rightMotorProportion += kp*error;
+    leftMotorProportion -= kp*error;
+    rightMotorProportion += kp*error;
+
+    tunnelMillis = millis();
+  }
 
   // Check if the line has been found
-  int lineReadingSum = 0;
-  for(int i=0; i<4; i++) {
-    lineReadingSum += lineReadings[i];
-  }
-  if(lineReadings > 0) {
-    inTunnel = false;
-  }
+  // int lineReadingSum = 0;
+  // for(int i=0; i<4; i++) {
+  //   lineReadingSum += lineReadings[i];
+  // }
+  // if(lineReadings > 0) {
+  //   inTunnel = false;
+  // }
 
   // if(counter = 1000000000)
   // {
@@ -372,7 +378,7 @@ void moveStraightArduino() {
   rightMotor -> setSpeed(75);
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
-  delay(2000);
+  delay(500);
 }
 
 void displayColour(Colour col) {

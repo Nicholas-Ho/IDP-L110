@@ -13,7 +13,7 @@ class ColourDetector {
         // State 2: Recording
         int state = 0;
 
-        int blueThreshold = 30; // in bits
+        int blueThreshold = 70; // in bits
 
         // Checking against sample approximately 0.5 s ago
         CircularBuffer pastSamples = CircularBuffer(50, true, 1023);
