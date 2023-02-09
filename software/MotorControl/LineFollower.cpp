@@ -70,30 +70,29 @@ int LineFollower::control(int lineReadings[4]) {
 
 int LineFollower::pathfind()
 {   //Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
-    /*
-    If blockColour = -1, count up for each junction we see
-    If blockColour = 0. Count down for each branch seen, deliver at branchCount = 2
-    If blockColour = 1, Count down for each branch seen, deliver at branchCount = 0
-    */
 
+    static int branchCounter = 0;
     int res = -1;
-
-    switch(blockColour)
+    if(!haveBlock)
     {
-        case -1:
-            branchCounter++;
-            break;
-        case 0:
-            branchCounter--;
-            if(branchCounter == 2) {res = 0;} //Green delivery area
-            break;
-        case 1:
-            branchCounter--;
-            if(branchCounter == 0) {res = 0;} //Red delivery area
-            break;
+      branchCounter++;
     }
-    // Serial.println(branchCounter);
-
+    else
+    {
+      switch(colour)
+      {
+          case Blue:
+              branchCounter--;
+              if(branchCounter == 2) {res = 0;} //Green delivery area
+              break;
+          case Red:
+              branchCounter--;
+              if(branchCounter == 0) {res = 0;} //Red delivery area
+              break;
+      }
+    Serial.println("Branch Counter: ");
+    Serial.println(branchCounter);
+    }
     return res;
 }
 
@@ -136,7 +135,7 @@ int LineFollower::detectJunction(int lineBinary) {
         return 0;
 
     } else if(lineBinary == 7) { // [0 1 1 1]
-        if (blockColour == -1)
+        if (!haveBlock)
         {
             // Move forward a tiny bit to ensure that it isn't a two-way junction
             activeFunc = &probeJunction;
@@ -242,6 +241,14 @@ int LineFollower::turnAround(int _) {
 int LineFollower::moveStraight(int _) {
     moveStraightArduino(2000);
     activeFunc = nullptr;
+}
+
+int LineFollower::reverse(int _)
+{
+  reverseArduino();
+  turnRightArduino();
+  activeFunc = nullptr;
+  return 0;
 }
 
 int LineFollower::probeJunction(int lineBinary) {

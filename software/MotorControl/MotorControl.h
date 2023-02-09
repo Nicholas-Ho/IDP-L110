@@ -9,6 +9,7 @@ void turnLeftArduino();
 void turnRightArduino();
 void turnAroundArduino();
 void moveStraightArduino(int delayTime);
+void reverseArduino();
 
 float getTunnelDistance();
 

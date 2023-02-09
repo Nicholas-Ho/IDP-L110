@@ -1,6 +1,7 @@
 #ifndef LINE_FOLLOWER_H
 #define LINE_FOLLOWER_H
 //#include "Arduino.h"
+#include "ColourDetector.h"
 
 // For clarity
 enum direction {straight, left, right, NONE_D, ERROR_D};
@@ -14,7 +15,8 @@ const float wheelAngularSpeed = (wheelRPM*2*3.14/60);
 class LineFollower {
 
     public:
-        LineFollower(float &leftM, float &rightM, bool& tunnel) : leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel) {};
+        LineFollower(float &leftM, float &rightM, bool& tunnel, bool& block, Colour& col) : leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), 
+        haveBlock(block), colour(col) {};
         int control(int lineReadings[4]);
 
     private:
@@ -22,13 +24,13 @@ class LineFollower {
         float& rightMotor;
 
         bool& inTunnel;
+        bool& haveBlock;
+        Colour& colour;
 
         const float kp = 0.233; // In proportion of maximum power
         const float basePower = 0.5; // Base power (before correction)
 
         direction probeStateJ = NONE_D; // State for probe junction
-        int branchCounter = 0; //Counting branches
-        int blockColour = -1; //Keeping track of block colour + whether or not it is picked up
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
 
@@ -40,6 +42,7 @@ class LineFollower {
         int turnRight(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
+        int reverse(int lineBinary);
         int probeJunction(int lineBinary);
         int probeEnd(int lineBinary);
         int pathfind();
