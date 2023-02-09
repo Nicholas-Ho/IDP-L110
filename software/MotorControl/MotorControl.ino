@@ -166,9 +166,9 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    controller.control(lineReadings); //left and right motor proportions are set now
-    // leftMotorProportion = 0.5;
-    // rightMotorProportion = 0.5;
+    // controller.control(lineReadings); //left and right motor proportions are set now
+    leftMotorProportion = 0;
+    rightMotorProportion = 0;
   }
    else //set motor proportions based on ultrasonic input
    {

@@ -84,8 +84,8 @@ int LineFollower::detectJunction(int lineBinary) {
     } else if(lineBinary == 14) { // [1 1 1 0]
 
         pathfindRes = pathfind(); //On left junction, we only want to count up or down, we never need to explore
-        activeFunc = &moveStraight;
-        Serial.println("Left");
+        activeFunc = &probeJunction;
+        probeStateJ = left;
 
         return 0;
 
@@ -195,15 +195,13 @@ int LineFollower::reverse(int _)
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 100; // TODO: Tune the duration of the probe
-
-    Serial.println(lineBinary);    
+    static const int max_count = 100; // TODO: Tune the duration of the probe  
 
     if(count == max_count) {
         count = 0;
         int pathfindRes = pathfind();
         if(probeStateJ == left) {
-            activeFunc = &turnLeft;  
+            activeFunc = &moveStraight; //On left junction, we only want to count up or down, we never need to explore
             dirStack.add(left);          
         } else if(probeStateJ == right) {
           if(!haveBlock) {
