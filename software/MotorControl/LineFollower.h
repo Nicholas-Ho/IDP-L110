@@ -22,6 +22,7 @@ class Stack {
         bool isEmpty();
         int add(direction dir);
         direction pop();
+        int reverseStack(); // Swap left with right in stack
 };
 
 //Helper functions
@@ -42,8 +43,8 @@ class LineFollower {
 
         bool& inTunnel;
 
-        const float kp = 0.233; // In proportion of maximum power
-        const float basePower = 0.5; // Base power (before correction)
+        const float kp = 0.3; // In proportion of maximum power
+        const float basePower = 0.75; // Base power (before correction)
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction

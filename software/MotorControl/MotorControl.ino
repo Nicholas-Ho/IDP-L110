@@ -59,7 +59,7 @@ const int bluePinOut = 8; // Digital Out
 const int redPinOut = 9; // Digital Out
 
 int colourSensorVal = 0;
-Colour colour = 0;
+Colour colour = NONE_C;
 
 bool haveBlock = false;
 
@@ -295,7 +295,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   static long tunnelMillis = 0;
   static int counter = 0;
   const static int counter_max = 100;
-  const float basePower = 0.5;
+  const float basePower = 0.75;
   
   float distance = NO_ECHO;
   float desired_distance = 3.9; // in cm
@@ -331,20 +331,6 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
     inTunnel = false;
     counter = 0;    
   }
-
-  // if(counter = 1000000000)
-  // {
-  //   Serial.println("Distance measured: ");
-  //   Serial.println(distance);
-  
-  //   Serial.println("Error: ");
-  //   Serial.println(error);  
-  //   counter = 0;
-  // }
-  // else
-  // {
-  //   counter++;
-  // }
   
 }
 

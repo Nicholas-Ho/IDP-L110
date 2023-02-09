@@ -43,9 +43,6 @@ int LineFollower::pathfind()
             break;
     }
     Serial.println(branchCounter);
-    if(branchCounter==5) {
-      displayColour(2);
-    }
 
     return res;
 }
@@ -65,8 +62,11 @@ int LineFollower::detectJunction(int lineBinary) {
     int pathfindRes; //Stores result of pathfind: 0 corresponds to turning and -1 to carrying on
 
     if(lineBinary == 15) { // [1 1 1 1]
+        // If haveBlock == true, reverse the stack (left becomes right and vice versa)
+        dirStack.reverseStack();
+        
         direction nextDir = dirStack.pop();
-        // Serial.println(nextDir);
+
         if(nextDir == left) {
             // Turn 90 degrees to the left
             activeFunc = &turnLeft;
@@ -77,7 +77,6 @@ int LineFollower::detectJunction(int lineBinary) {
             // Move straight for a second (suspend control!)
             activeFunc = &moveStraight;
         } else {
-            pathfindRes = pathfind();
             activeFunc = &moveStraight;
         }
     } else if(lineBinary == 14) { // [1 1 1 0]
@@ -197,7 +196,7 @@ int LineFollower::moveStraight(int _) {
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 150; // TODO: Tune the duration of the probe
+    static const int max_count = 100; // TODO: Tune the duration of the probe
 
     if(count == max_count) {
         count = 0;
@@ -225,8 +224,8 @@ int LineFollower::probeJunction(int lineBinary) {
         activeFunc = nullptr;
         return 0;
     } else {
-        leftMotor = basePower / 1.5;
-        rightMotor = basePower / 1.5;
+        leftMotor = 0.33;
+        rightMotor = 0.33;
         count++;
         return 0;
     }
@@ -247,8 +246,8 @@ int LineFollower::probeEnd(int lineBinary) {
         activeFunc = nullptr; // Resume normal function
         return 0;
     } else {
-        leftMotor = basePower / 2;
-        rightMotor = basePower / 2;
+        leftMotor = 0.33;
+        rightMotor = 0.33;
 
         float uSonicDist = getTunnelDistance();
         if(uSonicDist != 0.0 && uSonicDist < 6.0) { // In tunnel!
@@ -293,6 +292,18 @@ direction Stack::pop() {
     } else {
         return ERROR_D;
     }
+}
+
+int Stack::reverseStack() {
+  // Swap left with right in stack
+  for(int i=0; i<size; i++) {
+    if(stack[i] == left) {
+      stack[i] = right;
+    } else if(stack[i] == right) {
+      stack[i] = left;
+    }    
+  }
+  return 0;
 }
 
 //Helper functions
