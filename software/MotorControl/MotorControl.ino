@@ -117,7 +117,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 2; // CHANGE BACK TO 1
+      startup = 1; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -134,7 +134,7 @@ void setup()
     rightMotor -> run(FORWARD);
     delay(6500);
 
-    turnLeftArduino(2600);
+    turnLeftArduino();
 
     //Stop  
     leftMotor -> run(RELEASE);
@@ -166,9 +166,9 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    // controller.control(lineReadings); //left and right motor proportions are set now
-    leftMotorProportion = 0;
-    rightMotorProportion = 0;
+    controller.control(lineReadings); //left and right motor proportions are set now
+    // leftMotorProportion = 0;
+    // rightMotorProportion = 0;
   }
    else //set motor proportions based on ultrasonic input
    {
@@ -205,7 +205,7 @@ void loop()
     if(colour == Blue || colour == Red) {
       displayColour(colour);
       turnAroundArduino();
-      moveStraightArduino(500);
+      moveStraightArduino(75, 500);
     }
   }
 
@@ -231,16 +231,16 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
-    // Serial.println("Left Motor Proportion: ");
-    // Serial.println(leftMotorProportion);
-    // Serial.println("Right Motor Proportion: ");
-    // Serial.println(rightMotorProportion);
-    // Serial.println("Left Motor Speed:");
-    // Serial.println(leftMotorSpeed);
-    // Serial.println("Left Motor Sign: ");
-    // Serial.println(leftSign);
-    // Serial.println("\n");
+    // Serial.println(readingPrint);
+    // // Serial.println("Left Motor Proportion: ");
+    // // Serial.println(leftMotorProportion);
+    // // Serial.println("Right Motor Proportion: ");
+    // // Serial.println(rightMotorProportion);
+    // // Serial.println("Left Motor Speed:");
+    // // Serial.println(leftMotorSpeed);
+    // // Serial.println("Left Motor Sign: ");
+    // // Serial.println(leftSign);
+    // // Serial.println("\n");
     printCounter = 0;
   } else {
     printCounter++;    
@@ -325,7 +325,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
     counter = 0;
   }
   if(counter >= counter_max) {
-    Serial.println("Out of tunnel");
+    //Serial.println("Out of tunnel");
     inTunnel = false;
     counter = 0;    
   }
@@ -341,22 +341,22 @@ float getTunnelDistance() {
   return distance;
 }
 
-void turnLeftArduino(int delayTime) {
+void turnLeftArduino() {
   //Turn left 90 degrees
   leftMotor-> setSpeed(150);
   rightMotor -> setSpeed(150);
   leftMotor -> run(BACKWARD);
   rightMotor -> run(FORWARD);
-  delay(delayTime);
+  delay(2600);
 }
 
-void turnRightArduino(int delayTime) {
+void turnRightArduino() {
   //Turn right 90 degrees
   leftMotor-> setSpeed(150);
   rightMotor -> setSpeed(150);
   leftMotor -> run(FORWARD);
   rightMotor -> run(BACKWARD);
-  delay(delayTime);
+  delay(2600);
 }
 
 void turnAroundArduino() {
@@ -365,26 +365,28 @@ void turnAroundArduino() {
   rightMotor -> setSpeed(150);
   leftMotor -> run(FORWARD);
   rightMotor -> run(BACKWARD);
-  delay(5200);
+  delay(5600);
 }
 
-void moveStraightArduino(int delayTime) {
+void moveStraightArduino(int speed, int delayTime) {
   //Move straight
-  leftMotor-> setSpeed(75);
-  rightMotor -> setSpeed(75);
+  //75 speed for probing
+  //150 speed otherwise
+  leftMotor-> setSpeed(speed);
+  rightMotor -> setSpeed(speed);
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
   delay(delayTime);
 }
 
-void reverseArduino()
+void reverseArduino(int speed, int delayTime)
 {
   //Reverse
-  leftMotor -> setSpeed(75);
-  rightMotor->setSpeed(75);
+  leftMotor -> setSpeed(speed);
+  rightMotor->setSpeed(speed);
   leftMotor -> run(BACKWARD);
   rightMotor -> run(BACKWARD);
-  delay(5000);
+  delay(delayTime);
   
 }
 

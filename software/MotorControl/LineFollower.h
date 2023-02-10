@@ -6,12 +6,6 @@
 // For clarity
 enum direction {straight, left, right, NONE_D, ERROR_D};
 
-// Physical constants
-const float wheelSpan = 10; //Distance between wheels
-const float wheelRadius = 10;
-const float wheelRPM = 10; //Currently set to 10 RPM
-const float wheelAngularSpeed = (wheelRPM*2*3.14/60);
-
 // Helper stack class
 class Stack {
     private:
@@ -38,6 +32,7 @@ class LineFollower {
         LineFollower(float &leftM, float &rightM, bool& tunnel, bool& block, Colour& col) : leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), 
         haveBlock(block), colour(col) {};
         int control(int lineReadings[4]);
+        int returnHome();
 
     private:
         float& leftMotor;
@@ -47,30 +42,38 @@ class LineFollower {
         bool& haveBlock;
         Colour& colour;
 
-        const float kp = 0.3; // In proportion of maximum power
-        const float basePower = 0.75; // Base power (before correction)
+        const float kp = 0.33; // In proportion of maximum power
+        const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
+        
+        int pathfind();
 
         int detectEnd(int lineBinary);
         int detectJunction(int lineBinary);
         int followLine(int lineBinary);
 
         int turnLeft(int lineBinary);
+        int turnLeftT(int lineBinary);
         int turnRight(int lineBinary);
+        int turnRightT(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
         int probeSweep(int lineBinary);
         int probeEnd(int lineBinary);
-        int pathfind();
-        int sweep();
+// <<<<<<< HEAD
+//         int pathfind();
+//         int sweep();
 
-        float getTurningTime(float angle);
+//         float getTurningTime(float angle);
+// =======
+        int deliverBlock(int lineBinary);
+// >>>>>>> 33b9897e87a0e5bc4140c0ca197b37178a4cad8c
 
         int printCounter = 0;
 

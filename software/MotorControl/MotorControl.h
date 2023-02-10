@@ -5,11 +5,11 @@
 
 void displayColour(Colour col);
 
-void turnLeftArduino(int delayTime);
-void turnRightArduino(int delayTime);
+void turnLeftArduino();
+void turnRightArduino();
 void turnAroundArduino();
-void moveStraightArduino(int delayTime);
-void reverseArduino();
+void moveStraightArduino(int speed, int delayTime);
+void reverseArduino(int speed, int delayTime);
 
 float getTunnelDistance();
 
