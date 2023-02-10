@@ -42,7 +42,7 @@ class LineFollower {
         bool& haveBlock;
         Colour& colour;
 
-        const float kp = 0.3; // In proportion of maximum power
+        const float kp = 0.33; // In proportion of maximum power
         const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();
@@ -57,13 +57,23 @@ class LineFollower {
         int followLine(int lineBinary);
 
         int turnLeft(int lineBinary);
+        int turnLeftT(int lineBinary);
         int turnRight(int lineBinary);
+        int turnRightT(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
+        int probeSweep(int lineBinary);
         int probeEnd(int lineBinary);
+// <<<<<<< HEAD
+//         int pathfind();
+//         int sweep();
+
+//         float getTurningTime(float angle);
+// =======
         int deliverBlock(int lineBinary);
+// >>>>>>> 33b9897e87a0e5bc4140c0ca197b37178a4cad8c
 
         int printCounter = 0;
 

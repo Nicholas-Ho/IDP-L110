@@ -231,16 +231,16 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
-    // Serial.println("Left Motor Proportion: ");
-    // Serial.println(leftMotorProportion);
-    // Serial.println("Right Motor Proportion: ");
-    // Serial.println(rightMotorProportion);
-    // Serial.println("Left Motor Speed:");
-    // Serial.println(leftMotorSpeed);
-    // Serial.println("Left Motor Sign: ");
-    // Serial.println(leftSign);
-    // Serial.println("\n");
+    // Serial.println(readingPrint);
+    // // Serial.println("Left Motor Proportion: ");
+    // // Serial.println(leftMotorProportion);
+    // // Serial.println("Right Motor Proportion: ");
+    // // Serial.println(rightMotorProportion);
+    // // Serial.println("Left Motor Speed:");
+    // // Serial.println(leftMotorSpeed);
+    // // Serial.println("Left Motor Sign: ");
+    // // Serial.println(leftSign);
+    // // Serial.println("\n");
     printCounter = 0;
   } else {
     printCounter++;    
@@ -325,7 +325,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
     counter = 0;
   }
   if(counter >= counter_max) {
-    Serial.println("Out of tunnel");
+    //Serial.println("Out of tunnel");
     inTunnel = false;
     counter = 0;    
   }
