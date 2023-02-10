@@ -5,8 +5,8 @@
 
 void displayColour(Colour col);
 
-void turnLeftArduino();
-void turnRightArduino();
+void turnLeftArduino(int delayTime);
+void turnRightArduino(int delayTime);
 void turnAroundArduino();
 void moveStraightArduino(int delayTime);
 void reverseArduino();

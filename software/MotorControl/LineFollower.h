@@ -65,8 +65,10 @@ class LineFollower {
         int moveStraight(int lineBinary);
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
+        int probeSweep(int lineBinary);
         int probeEnd(int lineBinary);
         int pathfind();
+        int sweep();
 
         float getTurningTime(float angle);
 

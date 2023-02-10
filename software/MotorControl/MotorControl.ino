@@ -134,7 +134,7 @@ void setup()
     rightMotor -> run(FORWARD);
     delay(6500);
 
-    turnLeftArduino();
+    turnLeftArduino(2600);
 
     //Stop  
     leftMotor -> run(RELEASE);
@@ -341,22 +341,22 @@ float getTunnelDistance() {
   return distance;
 }
 
-void turnLeftArduino() {
+void turnLeftArduino(int delayTime) {
   //Turn left 90 degrees
   leftMotor-> setSpeed(150);
   rightMotor -> setSpeed(150);
   leftMotor -> run(BACKWARD);
   rightMotor -> run(FORWARD);
-  delay(2600);
+  delay(delayTime);
 }
 
-void turnRightArduino() {
+void turnRightArduino(int delayTime) {
   //Turn right 90 degrees
   leftMotor-> setSpeed(150);
   rightMotor -> setSpeed(150);
   leftMotor -> run(FORWARD);
   rightMotor -> run(BACKWARD);
-  delay(2600);
+  delay(delayTime);
 }
 
 void turnAroundArduino() {

@@ -160,7 +160,7 @@ int LineFollower::followLine(int lineBinary) {
 
 int LineFollower::turnLeft(int _) {
     moveStraightArduino(500);
-    turnLeftArduino();
+    turnLeftArduino(2600);
     moveStraightArduino(500);
     activeFunc = nullptr;
     return 0;
@@ -168,7 +168,7 @@ int LineFollower::turnLeft(int _) {
 
 int LineFollower::turnRight(int _) {
     moveStraightArduino(500);
-    turnRightArduino();
+    turnRightArduino(2600);
     moveStraightArduino(500);
     activeFunc = nullptr;
     return 0;
@@ -185,10 +185,70 @@ int LineFollower::moveStraight(int _) {
     activeFunc = nullptr;
 }
 
+int LineFollower::probeSweep(int lineBinary)
+{
+  static int sweepState = 0; //0 -> turn Left, 1 -> turnRight, 2 -> turnLeft again
+  static int lineBinarySum = 0;
+  static int count = 0;
+  const int max_count_left = 500;
+  const int max_count_right = 1000;
+
+  if (sweepState == 0 || sweepState == 2)
+  {
+    if(count == max_count_left)  
+    {
+      count = 0;
+      if(sweepState == 2) 
+      {
+        if(lineBinarySum)  //if line detected at all, keep going and don't turn around
+        {
+          activeFunc = nullptr; 
+          return 0;
+        } 
+        else 
+        { //sweep didn't detect a line, turn around
+          activeFunc = nullptr;
+          turnAroundArduino();
+          moveStraightArduino(500);
+          return 0;
+        }
+        lineBinarySum = 0;
+      }
+      else {sweepState = 1;}      
+    }
+    else
+    {
+      leftMotor = -basePower; //Sweeping to the left
+      rightMotor = basePower;
+      lineBinarySum += lineBinary;
+      count++;
+    }
+    return 0;
+  }
+  else if (sweepState == 1)
+  {
+
+    if(count == max_count_right)  
+    {
+      count = 0;
+      sweepState = 2;
+    }
+    else
+    {
+      leftMotor = basePower; //Sweeping to the right
+      rightMotor = -basePower;      
+      lineBinarySum += lineBinary;
+      count++;
+    }
+    return 0;
+  }
+    
+}
+
 int LineFollower::reverse(int _)
 {
   reverseArduino();
-  turnRightArduino();
+  turnRightArduino(2600);
   activeFunc = nullptr;
   return 0;
 }
@@ -244,10 +304,9 @@ int LineFollower::probeEnd(int lineBinary) {
     static const int max_count = 200;
 
     if(count >= max_count) { // No line, end of branch
+        //Do a sweep to check for false alarm
         count = 0;
-        activeFunc = nullptr;
-        turnAroundArduino();
-        moveStraightArduino(500);
+        // activeFunc = &probeSweep;
         return 0;
     } else if(lineBinary != 0) {
         count = 0;
