@@ -117,7 +117,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 2; // CHANGE BACK TO 1
+      startup = 1; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -166,9 +166,9 @@ void loop()
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
-    // controller.control(lineReadings); //left and right motor proportions are set now
-    leftMotorProportion = 0;
-    rightMotorProportion = 0;
+    controller.control(lineReadings); //left and right motor proportions are set now
+    // leftMotorProportion = 0;
+    // rightMotorProportion = 0;
   }
    else //set motor proportions based on ultrasonic input
    {
@@ -205,7 +205,7 @@ void loop()
     if(colour == Blue || colour == Red) {
       displayColour(colour);
       turnAroundArduino();
-      moveStraightArduino(500);
+      moveStraightArduino(75, 500);
     }
   }
 
@@ -368,23 +368,25 @@ void turnAroundArduino() {
   delay(5200);
 }
 
-void moveStraightArduino(int delayTime) {
+void moveStraightArduino(int speed, int delayTime) {
   //Move straight
-  leftMotor-> setSpeed(75);
-  rightMotor -> setSpeed(75);
+  //75 speed for probing
+  //150 speed otherwise
+  leftMotor-> setSpeed(speed);
+  rightMotor -> setSpeed(speed);
   leftMotor -> run(FORWARD);
   rightMotor -> run(FORWARD);
   delay(delayTime);
 }
 
-void reverseArduino()
+void reverseArduino(int speed, int delayTime)
 {
   //Reverse
-  leftMotor -> setSpeed(75);
-  rightMotor->setSpeed(75);
+  leftMotor -> setSpeed(speed);
+  rightMotor->setSpeed(speed);
   leftMotor -> run(BACKWARD);
   rightMotor -> run(BACKWARD);
-  delay(5000);
+  delay(delayTime);
   
 }
 

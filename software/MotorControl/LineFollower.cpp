@@ -21,7 +21,7 @@ int LineFollower::control(int lineReadings[4]) {
 int LineFollower::pathfind()
 {   //Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
 
-    static int branchCounter = 0;
+    static int branchCounter = 1;
     int res = -1;
     if(!haveBlock)
     {
@@ -119,10 +119,10 @@ int LineFollower::followLine(int lineBinary) {
             error = 0;
             break;
         case 1: // [0 0 0 1]
-            error = -3;
+            error = -2.5;
             break;
         case 3: // [0 0 1 1]
-            error = -2;
+            error = -1.5;
             break;
         case 2: // [0 0 1 0]
             error = -1;
@@ -131,10 +131,10 @@ int LineFollower::followLine(int lineBinary) {
             error = 1;
             break;
         case 12: // [1 1 0 0]
-            error = 2;
+            error = 1.5;
             break;
         case 8: // [1 0 0 0]
-            error = 3;
+            error = 2.5;
             break;
         default:
             // Default to the last error if there is an unexpected input (ie if it is turning left it will keep turning)
@@ -158,18 +158,22 @@ int LineFollower::followLine(int lineBinary) {
     return 0;
 }
 
+int LineFollower::returnHome() {
+  return -1;
+}
+
 int LineFollower::turnLeft(int _) {
-    moveStraightArduino(500);
+    moveStraightArduino(75, 500);
     turnLeftArduino();
-    moveStraightArduino(500);
+    moveStraightArduino(75, 500);
     activeFunc = nullptr;
     return 0;
 }
 
 int LineFollower::turnRight(int _) {
-    moveStraightArduino(500);
+    moveStraightArduino(75, 500);
     turnRightArduino();
-    moveStraightArduino(500);
+    moveStraightArduino(75, 500);
     activeFunc = nullptr;
     return 0;
 }
@@ -181,13 +185,13 @@ int LineFollower::turnAround(int _) {
 }
 
 int LineFollower::moveStraight(int _) {
-    moveStraightArduino(2000);
+    moveStraightArduino(150, 1000);
     activeFunc = nullptr;
 }
 
 int LineFollower::reverse(int _)
 {
-  reverseArduino();
+  reverseArduino(75, 5000);
   turnRightArduino();
   activeFunc = nullptr;
   return 0;
@@ -195,7 +199,7 @@ int LineFollower::reverse(int _)
 
 int LineFollower::probeJunction(int lineBinary) {
     static int count = 0;
-    static const int max_count = 100; // TODO: Tune the duration of the probe  
+    static const int max_count = 100;
 
     if(count == max_count) {
         count = 0;
@@ -209,8 +213,7 @@ int LineFollower::probeJunction(int lineBinary) {
             dirStack.add(right);
           } else if(haveBlock && pathfindRes == 0) 
             {
-                activeFunc = &turnRight; //Turn right into the delivery area
-                // TODO: Add block delivery function
+                activeFunc = &deliverBlock; // Deliver block
             } else {
             // haveBlock but not the delivery area
             activeFunc = &moveStraight;
@@ -241,21 +244,21 @@ int LineFollower::probeJunction(int lineBinary) {
 
 int LineFollower::probeEnd(int lineBinary) { 
     static int count = 0;
-    static const int max_count = 200;
+    static const int max_count = 150;
 
     if(count >= max_count) { // No line, end of branch
         count = 0;
         activeFunc = nullptr;
         turnAroundArduino();
-        moveStraightArduino(500);
+        moveStraightArduino(75, 500);
         return 0;
     } else if(lineBinary != 0) {
         count = 0;
         activeFunc = nullptr; // Resume normal function
         return 0;
     } else {
-        leftMotor = 0.33;
-        rightMotor = 0.33;
+        leftMotor = 0.5;
+        rightMotor = 0.5;
 
         float uSonicDist = getTunnelDistance();
         if(uSonicDist != 0.0 && uSonicDist < 6.0) { // In tunnel!
@@ -269,6 +272,16 @@ int LineFollower::probeEnd(int lineBinary) {
         count++;
         return 0;
     }
+}
+
+int LineFollower::deliverBlock(int _) {
+    turnRightArduino();
+    moveStraightArduino(150, 3000);
+    reverseArduino(150, 3000);
+    turnRightArduino();
+    moveStraightArduino(75, 1000);
+    activeFunc = nullptr;
+    return 0;
 }
 
 

@@ -6,12 +6,6 @@
 // For clarity
 enum direction {straight, left, right, NONE_D, ERROR_D};
 
-// Physical constants
-const float wheelSpan = 10; //Distance between wheels
-const float wheelRadius = 10;
-const float wheelRPM = 10; //Currently set to 10 RPM
-const float wheelAngularSpeed = (wheelRPM*2*3.14/60);
-
 // Helper stack class
 class Stack {
     private:
@@ -38,6 +32,7 @@ class LineFollower {
         LineFollower(float &leftM, float &rightM, bool& tunnel, bool& block, Colour& col) : leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), 
         haveBlock(block), colour(col) {};
         int control(int lineReadings[4]);
+        int returnHome();
 
     private:
         float& leftMotor;
@@ -47,13 +42,15 @@ class LineFollower {
         bool& haveBlock;
         Colour& colour;
 
-        const float kp = 0.3; // In proportion of maximum power
-        const float basePower = 0.75; // Base power (before correction)
+        const float kp = 0.35; // In proportion of maximum power
+        const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction
 
         int (LineFollower::*activeFunc)(int) = nullptr; // If there is an active function, skip main logic and call active function
+        
+        int pathfind();
 
         int detectEnd(int lineBinary);
         int detectJunction(int lineBinary);
@@ -66,9 +63,7 @@ class LineFollower {
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
         int probeEnd(int lineBinary);
-        int pathfind();
-
-        float getTurningTime(float angle);
+        int deliverBlock(int lineBinary);
 
         int printCounter = 0;
 
