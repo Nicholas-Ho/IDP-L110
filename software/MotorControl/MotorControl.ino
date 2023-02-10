@@ -117,7 +117,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 1; // CHANGE BACK TO 1
+      startup = 2; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -365,7 +365,7 @@ void turnAroundArduino() {
   rightMotor -> setSpeed(150);
   leftMotor -> run(FORWARD);
   rightMotor -> run(BACKWARD);
-  delay(5200);
+  delay(5600);
 }
 
 void moveStraightArduino(int speed, int delayTime) {

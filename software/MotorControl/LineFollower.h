@@ -42,7 +42,7 @@ class LineFollower {
         bool& haveBlock;
         Colour& colour;
 
-        const float kp = 0.35; // In proportion of maximum power
+        const float kp = 0.3; // In proportion of maximum power
         const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();

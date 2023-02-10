@@ -119,7 +119,7 @@ int LineFollower::followLine(int lineBinary) {
             error = 0;
             break;
         case 1: // [0 0 0 1]
-            error = -2.5;
+            error = -3;
             break;
         case 3: // [0 0 1 1]
             error = -1.5;
@@ -134,7 +134,7 @@ int LineFollower::followLine(int lineBinary) {
             error = 1.5;
             break;
         case 8: // [1 0 0 0]
-            error = 2.5;
+            error = 3;
             break;
         default:
             // Default to the last error if there is an unexpected input (ie if it is turning left it will keep turning)
@@ -244,7 +244,7 @@ int LineFollower::probeJunction(int lineBinary) {
 
 int LineFollower::probeEnd(int lineBinary) { 
     static int count = 0;
-    static const int max_count = 150;
+    static const int max_count = 350;
 
     if(count >= max_count) { // No line, end of branch
         count = 0;
