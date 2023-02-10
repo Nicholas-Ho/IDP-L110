@@ -21,7 +21,7 @@ int LineFollower::control(int lineReadings[4]) {
 int LineFollower::pathfind()
 {   //Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
 
-    static int branchCounter = 0;
+    static int branchCounter = 1;
     int res = -1;
     if(!haveBlock)
     {
