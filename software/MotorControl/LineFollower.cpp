@@ -89,17 +89,16 @@ int LineFollower::detectJunction(int lineBinary)
     }
 
     direction nextDir = dirStack.pop();
-    Serial.println(nextDir);
 
     if (nextDir == left)
     {
       // Turn 90 degrees to the left
-      activeFunc = &turnLeftT;
+      activeFunc = &turnLeft;
     }
     else if (nextDir == right)
     {
       // Turn 90 degrees to the right
-      activeFunc = &turnRightT;
+      activeFunc = &turnRight;
     }
     else if (nextDir == straight)
     {
@@ -205,11 +204,6 @@ int LineFollower::turnLeft(int _)
   return 0;
 }
 
-int LineFollower::turnLeftT(int _) {
-  moveStraightArduino(75, 500);
-  activeFunc = &turnLeft;
-}
-
 int LineFollower::turnRight(int _)
 {
   moveStraightArduino(75, 500);
@@ -217,11 +211,6 @@ int LineFollower::turnRight(int _)
   moveStraightArduino(75, 500);
   activeFunc = nullptr;
   return 0;
-}
-
-int LineFollower::turnRightT(int _) {
-  moveStraightArduino(75, 500);
-  activeFunc = &turnRight;
 }
 
 int LineFollower::turnAround(int _)
@@ -235,6 +224,84 @@ int LineFollower::moveStraight(int _)
 {
   moveStraightArduino(150, 1000);
   activeFunc = nullptr;
+}
+
+int LineFollower::probeSweep(int lineBinary)
+{
+  // State of the sweeping process
+  static int sweepState = 0;
+  // Sum of the binary values for line detection
+  static int lineBinarySum = 0;
+  // Counter for the number of times the sweep has happened
+  static int count = 0;
+  // Maximum number of sweeps to the left
+  const int maxCountLeft = 50;
+  // Maximum number of sweeps to the right
+  const int maxCountRight = 100;
+
+  switch (sweepState)
+  {
+  case 0: // First sweep to the left
+  case 2: // Second sweep to the left
+    if (count == maxCountLeft)
+    {
+      count = 0;
+
+      if (lineBinarySum)
+      {
+        // If a line was detected, stop sweeping and reset binary sum
+        activeFunc = nullptr;
+        lineBinarySum = 0;
+        break;
+      }
+
+      // If no line was detected, go to the next sweep state
+      sweepState = (sweepState == 0) ? 1 : 0;
+      activeFunc = nullptr;
+      lineBinarySum = 0;
+      turnAroundArduino();
+      moveStraightArduino(75, 500);
+      break;
+    }
+
+    // Move the motors left or right depending on the sweep state
+    leftMotor = (sweepState == 0) ? -basePower : basePower;
+    rightMotor = (sweepState == 0) ? basePower : -basePower;
+    // Keep track of the binary sum
+    lineBinarySum += lineBinary;
+    // Increment the sweep count
+    count++;
+    break;
+
+  case 1: // Sweep to the right
+    if (count == maxCountRight)
+    {
+      if (lineBinarySum)
+      {
+        // If a line was detected, stop sweeping and reset binary sum
+        activeFunc = nullptr;
+        sweepState = 0;
+        lineBinarySum = 0;
+        break;
+      }
+
+      // If no line was detected, go back to the second sweep to the left
+      count = 0;
+      sweepState = 2;
+      break;
+    }
+
+    // Move the motors right
+    leftMotor = basePower;
+    rightMotor = -basePower;
+    // Keep track of the binary sum
+    lineBinarySum += lineBinary;
+    // Increment the sweep count
+    count++;
+    break;
+  }
+
+  return 0;
 }
 
 int LineFollower::reverse(int _)
@@ -257,6 +324,7 @@ int LineFollower::probeJunction(int lineBinary)
     if (probeStateJ == left)
     {
       activeFunc = &moveStraight; // On left junction, we only want to count up or down, we never need to explore
+      dirStack.add(left);
     }
     else if (probeStateJ == right)
     {
@@ -341,89 +409,6 @@ int LineFollower::probeEnd(int lineBinary)
     }
 
     count++;
-    return 0;
-  }
-}
-
-int LineFollower::probeSweep(int lineBinary)
-{
-  static int sweepState = 0; //0 -> turn Left, 1 -> turnRight, 2 -> turnLeft again
-  static int lineBinarySum = 0;
-  static int count = 0;
-  const int max_count_left = 50;
-  const int max_count_right = 100;
-
-  if (sweepState == 0 || sweepState == 2)
-  {   
-    if(count == max_count_left)  
-    {
-        count = 0;
-        if(sweepState == 0)
-        {
-          if(lineBinarySum)  //if line detected at all, keep going and don't turn around
-          {
-            activeFunc = nullptr;
-            lineBinarySum = 0;
-            sweepState = 0; 
-            return 0;
-          }
-          else {
-            sweepState = 1;
-            return 0;            
-          }
-        } 
-        else  {
-            if(lineBinarySum)  //if line detected at all, keep going and don't turn around
-          {
-            activeFunc = nullptr;
-            lineBinarySum = 0;
-            sweepState = 0; 
-            return 0;
-          } 
-          else 
-          { //sweep didn't detect a line, turn around
-            activeFunc = nullptr;
-            lineBinarySum = 0;
-            sweepState = 0; 
-            turnAroundArduino();
-            moveStraightArduino(75, 500);
-            return 0;
-          }
-        }
-        }
-
-    else
-    {
-      leftMotor = -basePower; //Sweeping to the left
-      rightMotor = basePower;
-      lineBinarySum += lineBinary;
-      count++;
-    }
-    return 0;
-  }
-  else if (sweepState == 1)
-  {
-    if(count == max_count_right)  
-    {
-      if(lineBinarySum)
-      {
-        activeFunc = nullptr;
-        sweepState = 0;
-        lineBinary = 0;
-      }
-      else
-      {
-        count = 0;
-        sweepState = 2;
-      }
-    }
-    else
-    {
-      leftMotor = basePower; //Sweeping to the right
-      rightMotor = -basePower;      
-      lineBinarySum += lineBinary;
-      count++;
-    }
     return 0;
   }
 }
