@@ -117,7 +117,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 1; // CHANGE BACK TO 1
+      startup = 2; // CHANGE BACK TO 1
       break;
     }
     delay(50); 

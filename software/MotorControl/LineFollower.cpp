@@ -132,6 +132,49 @@ int LineFollower::detectJunction(int lineBinary)
   return -1;
 }
 
+<<<<<<< HEAD
+int LineFollower::followLine(int lineBinary) {
+    static int lastError = 0;
+    
+    // At base, move forward at desired power
+    leftMotor = basePower;
+    rightMotor = basePower;
+
+    // If ideal state of [0 1 1 0], do nothing
+    // If not, direction correction
+
+    // Left is positive error, right is negative error
+    int error;
+    switch(lineBinary) {
+        case 6: // [0 1 1 0]
+            error = 0;
+            break;
+        case 1: // [0 0 0 1]
+            error = -3;
+            break;
+        case 3: // [0 0 1 1]
+            error = -1.5;
+            break;
+        case 2: // [0 0 1 0]
+            error = -1;
+            break;
+        case 4: // [0 1 0 0]
+            error = 1;
+            break;
+        case 12: // [1 1 0 0]
+            error = 1.5;
+            break;
+        case 8: // [1 0 0 0]
+            error = 3;
+            break;
+        default:
+            // Default to the last error if there is an unexpected input (ie if it is turning left it will keep turning)
+            error = lastError;
+            break;
+    }
+    // Note: case [0 0 0 0] is not handled in the line following algorithm (branch end detection)
+    // Note: cases [1 1 1 0] and [0 1 1 1] are not handled in the line following algorithm (junction detection)
+=======
 int LineFollower::followLine(int lineBinary)
 {
   static int lastError = 0;
@@ -175,6 +218,7 @@ int LineFollower::followLine(int lineBinary)
   }
   // Note: case [0 0 0 0] is not handled in the line following algorithm (branch end detection)
   // Note: cases [1 1 1 0] and [0 1 1 1] are not handled in the line following algorithm (junction detection)
+>>>>>>> d83e9c8bad0f9a627697a63ecb6d468e2b5ae1f4
 
   // Update lastError for switch default
   lastError = error;
@@ -374,10 +418,16 @@ int LineFollower::probeJunction(int lineBinary)
   }
 }
 
+<<<<<<< HEAD
+int LineFollower::probeEnd(int lineBinary) { 
+    static int count = 0;
+    static const int max_count = 350;
+=======
 int LineFollower::probeEnd(int lineBinary)
 {
   static int count = 0;
   static const int max_count = 150;
+>>>>>>> d83e9c8bad0f9a627697a63ecb6d468e2b5ae1f4
 
   if (count >= max_count)
   { // No line, end of branch
