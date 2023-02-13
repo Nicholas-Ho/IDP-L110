@@ -20,7 +20,7 @@ Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 float leftMotorProportion = 0.5;
 float rightMotorProportion = 0.5;
 
-const uint8_t maxPower = 220; // 255 is too much
+const uint8_t maxPower = 240; // 255 is too much
 
 //Assign line sensor pins (left to right)
 const int linePins[4] = {4, 5, 6, 7};
@@ -59,8 +59,17 @@ Colour colour = 0;
 bool haveBlock = false;
 int colourSensorVal = 0;
 
+/*
+Robot States:
+0 --> Stop state (waiting for button press)
+1 --> Startup sequence
+2 --> Line Following
+3 --> Returning home
+*/
+int robotState = 0;
+
 //Instantiate a controller object, passing in references to the left and right motor objects
-LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, haveBlock, colour);
+LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, haveBlock, colour, robotState);
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
@@ -72,8 +81,6 @@ bool blinkyState = false; // True if blinking
 //Push Button
 uint8_t buttonPressed = 1;
 int buttonPin = 10;
-
-int startup = 0; //Start up sequence state (0 -> Button not pressed, 1 -> Button pressed, robot needs to move, 2 -> End of start up sequence)
 
 void setup() 
 {
@@ -89,9 +96,6 @@ void setup()
   {
     Serial.println("Motors online.");
   }
-
-  leftMotor->run(RELEASE);
-  rightMotor->run(RELEASE);
 
   // Setup line sensors
   pinMode(linePins[0], INPUT);
@@ -112,12 +116,16 @@ void setup()
   Serial.println("Ready.");
 
   //Read button input every 50ms
-  while (startup == 0)
+  while (robotState == 0)
   { 
+
+    leftMotor->run(RELEASE);
+    rightMotor->run(RELEASE);
+
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      startup = 2; // CHANGE BACK TO 1
+      robotState = 2; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -125,8 +133,9 @@ void setup()
 
   Serial.println("Starting....");
 
-  while(startup == 1)
+  if(robotState == 1)
   {
+    //long start = millis();             
     //Run forward
     leftMotor-> setSpeed(150);
     rightMotor -> setSpeed(150);
@@ -139,7 +148,7 @@ void setup()
     //Stop  
     leftMotor -> run(RELEASE);
     rightMotor -> run(RELEASE);
-    startup = 2;
+    robotState = 2;
   }
   Serial.println("Robot is running.");
 }
@@ -149,6 +158,8 @@ int printCounter = 0;
 void loop() 
 {   
   String readingPrint = "";
+
+  //if(millis() - start >= 270000) {robotState = 3;}
 
   // LINE CONTROL
   // Read line sensors
@@ -231,7 +242,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    // Serial.println(readingPrint);
+    Serial.println(readingPrint);
     // // Serial.println("Left Motor Proportion: ");
     // // Serial.println(leftMotorProportion);
     // // Serial.println("Right Motor Proportion: ");
@@ -292,7 +303,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   const static int interval = 100;
   static long tunnelMillis = 0;
   static int counter = 0;
-  const static int counter_max = 100;
+  const static int counter_max = 300;
   const float basePower = 0.75;
   
   float distance = NO_ECHO;
@@ -325,7 +336,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
     counter = 0;
   }
   if(counter >= counter_max) {
-    //Serial.println("Out of tunnel");
+    Serial.println("Out of tunnel");
     inTunnel = false;
     counter = 0;    
   }
