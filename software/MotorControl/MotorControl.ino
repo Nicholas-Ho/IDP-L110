@@ -4,7 +4,6 @@
 #include "LineFollower.h"
 #include "ColourDetector.h"
 #include <NewPing.h>
-#include <arduino-timer.h>
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
@@ -20,7 +19,6 @@ Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 //Initialising the variables representing the output of the controller (proportions of maximum power)
 float leftMotorProportion = 0.5;
 float rightMotorProportion = 0.5;
-float manualCorrection[2] = {1, 1}; // Proportions {left, right}
 
 const uint8_t maxPower = 240; // 255 is too much
 
@@ -38,8 +36,6 @@ bool inTunnel = false;
 NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE_T);
 float desiredDistance = 3.9; // in cm
 void tunnelControl(float&, float&);
-void resetSpeed();
-auto timer = timer_create_default();
 
 //Block Ultrasonic
 const int trigPinB = 1;
@@ -263,8 +259,8 @@ void loop()
   }
   
   //Setting the magnitude of the motor speeds
-  leftMotor->setSpeed(leftMotorSpeed*manualCorrection[0]);
-  rightMotor->setSpeed(rightMotorSpeed*manualCorrection[1]);
+  leftMotor->setSpeed(leftMotorSpeed);
+  rightMotor->setSpeed(rightMotorSpeed);
   // leftMotor->setSpeed(100);
   // rightMotor->setSpeed(100);
 
@@ -314,8 +310,6 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   float distance = NO_ECHO;
   float kp = 0.2;
 
-  const int slow_duration = 10000;
-
   if(millis() - tunnelMillis >= interval) {
     distance = getTunnelDistance();
     
@@ -345,9 +339,6 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
     Serial.println("Out of tunnel");
     inTunnel = false;
     counter = 0;
-    manualCorrection[0] = 0.7;
-    manualCorrection[1] = 0.7;
-    timer.in(slow_duration, resetSpeed);
   } 
 }
 
@@ -358,12 +349,6 @@ float getTunnelDistance() {
   distance = (speed*time)/2;
 
   return distance;
-}
-
-void resetSpeed() {
-  manualCorrection[0] = 1;
-  manualCorrection[1] = 1;
-  displayColour(Blue);  
 }
 
 void turnLeftArduino() {
