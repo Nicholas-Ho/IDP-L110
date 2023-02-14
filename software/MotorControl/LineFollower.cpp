@@ -141,6 +141,11 @@ int LineFollower::detectJunction(int lineBinary)
 int LineFollower::followLine(int lineBinary)
 {
   static int lastError = 0;
+  int bufferSize = 20;
+  static CircularBuffer previousErrors = CircularBuffer(bufferSize, true, 0);
+  const float sampleDelay = 500; //500 ms delay between error readings
+  static long startTime = millis();
+  static int previousError = 0;
 
   // At base, move forward at desired power
   leftMotor = basePower;
@@ -184,10 +189,18 @@ int LineFollower::followLine(int lineBinary)
 
   // Update lastError for switch default
   lastError = error;
+  previousErrors.add(error); //Adding error to circular buffer
+
+  //Every 500 ms, get a new previous error
+  if(millis() >= startTime + sampleDelay)
+  {
+    previousError = previousErrors.pop();
+    startTime = millis(); //reset start time
+  }
 
   // Based on the error, do some proportional control
-  leftMotor -= kp * error;
-  rightMotor += kp * error;
+  leftMotor -= kp * error + kd * ((error - previousError)/sampleDelay);
+  rightMotor += kp * error + kd * ((error - previousError)/sampleDelay);
 
   // Ensure that we're not trying to power the motors beyond their maximum
   leftMotor = max((float)-1, min((float)1, leftMotor));

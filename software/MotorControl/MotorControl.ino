@@ -303,7 +303,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 { 
   const static int interval = 100;
   static long tunnelMillis = 0;
-  static int counter = 0;
+  static int counter = 0;                                                                                                       
   const static int counter_max = 100;
   const float basePower = 0.75;
   

@@ -45,6 +45,7 @@ class LineFollower {
         int& robotState;
 
         const float kp = 0.25; // In proportion of maximum power
+        const float kd = 0.7;
         const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();
