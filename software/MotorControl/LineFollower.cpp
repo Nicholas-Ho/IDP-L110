@@ -33,13 +33,8 @@ int LineFollower::pathfind()
 
   static int branchCounter = 1;
   int res = -1;
-  
-  // if(robotState == 3 && branchCounter == 0) //Indicates that we should turn into the home delivery box
-  // {
-  //   return 0;
-  // }
 
-  if (!haveBlock)
+  if (!haveBlock && robotState == 2)
   {
     branchCounter++;
   }
@@ -61,6 +56,12 @@ int LineFollower::pathfind()
         res = 0;
       } // Red delivery area
       break;
+    default:
+      branchCounter--;
+      if(robotState == 3 && branchCounter == 0) //Indicates that we should turn into the home delivery box
+      {
+        return 0;
+      }
     }
   }
 
@@ -209,15 +210,6 @@ int LineFollower::followLine(int lineBinary)
   return 0;
 }
 
-int LineFollower::returnHome()
-{ 
-  turnRightArduino();
-  moveStraightArduino(150, 3000);
-  robotState = 0; //Stop state
-  
-  return -1;
-}
-
 int LineFollower::turnLeft(int _)
 {
   moveStraightArduino(75, 500);
@@ -249,87 +241,6 @@ int LineFollower::moveStraight(int _)
   activeFunc = nullptr;
 }
 
-// int LineFollower::probeSweep(int lineBinary)
-// {
-//   // State of the sweeping process
-//   static int sweepState = 0;
-//   // Sum of the binary values for line detection
-//   static int lineBinarySum = 0;
-//   // Counter for the number of times the sweep has happened
-//   static int count = 0;
-//   // Maximum number of sweeps to the left
-//   const int maxCountLeft = 50;
-//   // Maximum number of sweeps to the right
-//   const int maxCountRight = 100;
-
-//   switch (sweepState)
-//   {
-//   case 0: // First sweep to the left
-//   case 2: // Second sweep to the left
-//     if (count == maxCountLeft)
-//     {
-//       count = 0;
-
-//       if (lineBinarySum)
-//       {
-//         // If a line was detected, stop sweeping and reset binary sum
-//         activeFunc = nullptr;
-//         lineBinarySum = 0;
-//         return 0;
-//       }
-
-//       // If no line was detected, go to the next sweep state
-//       sweepState = (sweepState == 0) ? 1 : 0;
-//       activeFunc = nullptr;
-//       lineBinarySum = 0;
-//       turnAroundArduino();
-//       moveStraightArduino(75, 500);
-//       return 0;
-//     }
-
-//     // Move the motors left or right depending on the sweep state
-//     leftMotor = (sweepState == 0) ? -basePower : basePower;
-//     rightMotor = (sweepState == 0) ? basePower : -basePower;
-//     // Keep track of the binary sum
-//     lineBinarySum += lineBinary;
-//     // Increment the sweep count
-//     count++;
-//     break;
-
-//   case 1: // Sweep to the right
-//     if (count == maxCountRight)
-//     {
-//       if (lineBinarySum)
-//       {
-//         // If a line was detected, stop sweeping and reset binary sum
-//         activeFunc = nullptr;
-//         sweepState = 0;
-//         lineBinarySum = 0;
-//         return 0;
-//       }
-
-//       // If no line was detected, go back to the second sweep to the left
-//       count = 0;
-//       sweepState = 2;
-//       break;
-//     }
-
-//     // Move the motors right
-//     leftMotor = basePower;
-//     rightMotor = -basePower;
-//     // Keep track of the binary sum
-//     lineBinarySum += lineBinary;
-//     // Increment the sweep count
-//     count++;
-//     break;
-//   }
-
-//   activeFunc = &checkTunnel;
-
-//   return 0;
-// }
-
-
 int LineFollower::reverse(int _)
 {
   reverseArduino(75, 5000);
@@ -356,7 +267,11 @@ int LineFollower::probeJunction(int lineBinary)
     else if (probeStateJ == right)
     {
       pathfindRes = pathfind();
-      if (!haveBlock)
+      if(robotState == 3 && pathfindRes == 0)
+      {
+        activeFunc = &returnHome;
+      }
+      else if (!haveBlock)
       {
         activeFunc = &turnRight;
         dirStack.add(right);
@@ -452,6 +367,15 @@ int LineFollower::deliverBlock(int _)
   reverseArduino(150, 3000);
   turnRightArduino();
   moveStraightArduino(75, 1000);
+  activeFunc = nullptr;
+  return 0;
+}
+
+int LineFollower::returnHome(int _)
+{
+  turnRightArduino();
+  moveStraightArduino(150, 6000);
+  robotState = 4;
   activeFunc = nullptr;
   return 0;
 }
