@@ -4,6 +4,7 @@
 #include "LineFollower.h"
 #include "ColourDetector.h"
 #include <NewPing.h>
+#include <arduino-timer.h>
 
 //Instantiate MotorShield object
 Adafruit_MotorShield motor_shield = Adafruit_MotorShield(0x60);
@@ -19,6 +20,7 @@ Adafruit_DCMotor* rightMotor = motor_shield.getMotor(rightPin);
 //Initialising the variables representing the output of the controller (proportions of maximum power)
 float leftMotorProportion = 0.5;
 float rightMotorProportion = 0.5;
+float manualCorrection[2] = {1, 1}; // Proportions {left, right}
 
 const uint8_t maxPower = 240; // 255 is too much
 
@@ -34,7 +36,10 @@ const int MAX_DISTANCE_T = 20; //in centimetres
 //Tunnel Ultrasonic
 bool inTunnel = false;
 NewPing sonarTunnel(triggerPinTun, echoPinTun, MAX_DISTANCE_T);
+float desiredDistance = 3.9; // in cm
 void tunnelControl(float&, float&);
+void resetSpeed();
+auto timer = timer_create_default();
 
 //Block Ultrasonic
 const int trigPinB = 1;
@@ -69,7 +74,7 @@ Robot States:
 int robotState = 0;
 
 //Instantiate a controller object, passing in references to the left and right motor objects
-LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, haveBlock, colour, robotState);
+LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, desiredDistance, haveBlock, colour, robotState);
 
 //Instantiate a colour detector object
 ColourDetector detector = ColourDetector();
@@ -242,7 +247,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
+    // Serial.println(readingPrint);
     // // Serial.println("Left Motor Proportion: ");
     // // Serial.println(leftMotorProportion);
     // // Serial.println("Right Motor Proportion: ");
@@ -258,8 +263,8 @@ void loop()
   }
   
   //Setting the magnitude of the motor speeds
-  leftMotor->setSpeed(leftMotorSpeed);
-  rightMotor->setSpeed(rightMotorSpeed);
+  leftMotor->setSpeed(leftMotorSpeed*manualCorrection[0]);
+  rightMotor->setSpeed(rightMotorSpeed*manualCorrection[1]);
   // leftMotor->setSpeed(100);
   // rightMotor->setSpeed(100);
 
@@ -303,19 +308,20 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   const static int interval = 100;
   static long tunnelMillis = 0;
   static int counter = 0;
-  const static int counter_max = 300;
+  const static int counter_max = 100;
   const float basePower = 0.75;
   
   float distance = NO_ECHO;
-  float desired_distance = 3.9; // in cm
-  float kp = 0.01;
+  float kp = 0.2;
+
+  const int slow_duration = 10000;
 
   if(millis() - tunnelMillis >= interval) {
     distance = getTunnelDistance();
     
     int counter = 0;
 
-    float error = distance - desired_distance;
+    float error = distance - desiredDistance;
 
     leftMotorProportion = basePower;
     rightMotorProportion = basePower;
@@ -338,9 +344,11 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   if(counter >= counter_max) {
     Serial.println("Out of tunnel");
     inTunnel = false;
-    counter = 0;    
-  }
-  
+    counter = 0;
+    manualCorrection[0] = 0.7;
+    manualCorrection[1] = 0.7;
+    timer.in(slow_duration, resetSpeed);
+  } 
 }
 
 float getTunnelDistance() {
@@ -350,6 +358,12 @@ float getTunnelDistance() {
   distance = (speed*time)/2;
 
   return distance;
+}
+
+void resetSpeed() {
+  manualCorrection[0] = 1;
+  manualCorrection[1] = 1;
+  displayColour(Blue);  
 }
 
 void turnLeftArduino() {

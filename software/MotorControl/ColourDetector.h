@@ -24,7 +24,7 @@ class ColourDetector {
         long prevMillis = 0;
 
         // Counter, if approximately 1.5 seconds is up, declare red
-        int counterThresh = 150;
+        int counterThresh = 100;
         int counter = 0;
 
     public:

@@ -49,14 +49,14 @@ int LineFollower::pathfind()
     {
     case Blue:
       branchCounter--;
-      if (branchCounter == 1)
+      if (branchCounter == 2)
       {
         res = 0;
       } // Green delivery area
       break;
     case Red:
       branchCounter--;
-      if (branchCounter == -1)
+      if (branchCounter == 0)
       {
         res = 0;
       } // Red delivery area
@@ -119,7 +119,7 @@ int LineFollower::detectJunction(int lineBinary)
   else if (lineBinary == 14)
   { // [1 1 1 0]
 
-    pathfindRes = pathfind(); // On left junction, we only want to count up or down, we never need to explore
+    // On left junction, we only want to count up or down, we never need to explore
     activeFunc = &probeJunction;
     probeStateJ = left;
 
@@ -160,7 +160,7 @@ int LineFollower::followLine(int lineBinary)
     error = -3;
     break;
   case 3: // [0 0 1 1]
-    error = -1.5;
+    error = -2;
     break;
   case 2: // [0 0 1 0]
     error = -1;
@@ -169,7 +169,7 @@ int LineFollower::followLine(int lineBinary)
     error = 1;
     break;
   case 12: // [1 1 0 0]
-    error = 1.5;
+    error = 2;
     break;
   case 8: // [1 0 0 0]
     error = 3;
@@ -328,19 +328,21 @@ int LineFollower::reverse(int _)
 int LineFollower::probeJunction(int lineBinary)
 {
   static int count = 0;
-  static const int max_count = 100;
+  static const int max_count = 50;
 
   if (count == max_count)
   {
     count = 0;
-    int pathfindRes = pathfind();
+    int pathfindRes = -1;
     if (probeStateJ == left)
     {
+      pathfindRes = pathfind();
       activeFunc = &moveStraight; // On left junction, we only want to count up or down, we never need to explore
       dirStack.add(left);
     }
     else if (probeStateJ == right)
     {
+      pathfindRes = pathfind();
       if (!haveBlock)
       {
         activeFunc = &turnRight;
@@ -417,13 +419,16 @@ int LineFollower::probeEnd(int lineBinary)
 
 int LineFollower::checkTunnel(int _) {
   float uSonicDist = getTunnelDistance();
-    if (uSonicDist != 0.0 && uSonicDist < 6.0)
+    if (uSonicDist != 0.0 && uSonicDist < 10.0)
     { // In tunnel!
       inTunnel = true;
       Serial.println("Entering tunnel");
+      desiredDistance = uSonicDist;            
+      activeFunc = nullptr;
       return 0;
+    } else {
+      activeFunc = &turnAround;
     }
-    activeFunc = nullptr;
     return -1;
 }
 

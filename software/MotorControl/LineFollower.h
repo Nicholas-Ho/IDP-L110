@@ -29,8 +29,8 @@ float min(float a, float b);
 class LineFollower {
 
     public:
-        LineFollower(float &leftM, float &rightM, bool& tunnel, bool& block, Colour& col, int& state) : 
-        leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), haveBlock(block), colour(col), robotState(state) {};
+        LineFollower(float &leftM, float &rightM, bool& tunnel, float& desired_dist, bool& block, Colour& col, int& state) : 
+        leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), desiredDistance(desired_dist), haveBlock(block), colour(col), robotState(state) {};
         int control(int lineReadings[4]);
         int returnHome();
 
@@ -39,12 +39,13 @@ class LineFollower {
         float& rightMotor;
 
         bool& inTunnel;
+        float& desiredDistance;
         bool& haveBlock;
         Colour& colour;
         int& robotState;
 
-        const float kp = 0.3; // In proportion of maximum power
-        const float basePower = 0.7; // Base power (before correction)
+        const float kp = 0.25; // In proportion of maximum power
+        const float basePower = 0.8; // Base power (before correction)
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction
