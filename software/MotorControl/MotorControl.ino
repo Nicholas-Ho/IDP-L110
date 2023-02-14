@@ -71,7 +71,7 @@ Robot States:
 int robotState = 0;
 
 //Return to starting box
-const long circuitDuration = 15000; //240000; // in milliseconds
+const long circuitDuration = 240000; // in milliseconds
 long endTime = 0;
 int turn_count = 0;
 const int turn_count_max = 50;
@@ -145,11 +145,11 @@ void setup()
   {
     //long start = millis();             
     //Run forward
-    leftMotor-> setSpeed(150);
-    rightMotor -> setSpeed(150);
+    leftMotor-> setSpeed(200);
+    rightMotor -> setSpeed(200);
     leftMotor -> run(FORWARD);
     rightMotor -> run(FORWARD);
-    delay(6500);
+    delay(4900);
 
     turnLeftArduino();
 
@@ -211,8 +211,8 @@ void loop()
   if(!inTunnel) //set motor proportions based on line sensor input
   {
     controller.control(lineReadings); //left and right motor proportions are set now
-    // leftMotorProportion = 0.7;
-    // rightMotorProportion = 0.7;
+    // leftMotorProportion = 0;
+    // rightMotorProportion = 0;
   }
    else //set motor proportions based on ultrasonic input
    {
@@ -275,7 +275,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    // Serial.println(readingPrint);
+    Serial.println(readingPrint);
     printCounter = 0;
   } else {
     printCounter++;    

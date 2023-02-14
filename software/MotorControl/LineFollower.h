@@ -44,12 +44,8 @@ class LineFollower {
         int& robotState;
 
         const float kp = 0.25; // In proportion of maximum power
-<<<<<<< HEAD
-        const float kd = 0.7;
+        const float kd = 10;
         const float basePower = 0.8; // Base power (before correction)
-=======
-        const float basePower = 0.9; // Base power (before correction)
->>>>>>> dde6829ed51fcf2498ebffed6e560b9aa484be41
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction

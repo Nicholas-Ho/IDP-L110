@@ -144,7 +144,7 @@ int LineFollower::followLine(int lineBinary)
   static int lastError = 0;
   int bufferSize = 20;
   static CircularBuffer previousErrors = CircularBuffer(bufferSize, true, 0);
-  const float sampleDelay = 500; //500 ms delay between error readings
+  const float sampleDelay = 100; //50 ms delay between error readings
   static long startTime = millis();
   static int previousError = 0;
 
@@ -190,11 +190,11 @@ int LineFollower::followLine(int lineBinary)
 
   // Update lastError for switch default
   lastError = error;
-  previousErrors.add(error); //Adding error to circular buffer
 
-  //Every 500 ms, get a new previous error
+  //Every 50 ms, get a new previous error
   if(millis() >= startTime + sampleDelay)
   {
+    previousErrors.add(error); //Adding error to circular buffer
     previousError = previousErrors.pop();
     startTime = millis(); //reset start time
   }
@@ -252,7 +252,7 @@ int LineFollower::reverse(int _)
 int LineFollower::probeJunction(int lineBinary)
 {
   static int count = 0;
-  static const int max_count = 50;
+  static const int max_count = 70;
 
   if (count == max_count)
   {
