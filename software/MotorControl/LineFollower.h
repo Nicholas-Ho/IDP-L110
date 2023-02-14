@@ -32,7 +32,6 @@ class LineFollower {
         LineFollower(float &leftM, float &rightM, bool& tunnel, float& desired_dist, bool& block, Colour& col, int& state) : 
         leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), desiredDistance(desired_dist), haveBlock(block), colour(col), robotState(state) {};
         int control(int lineReadings[4]);
-        int returnHome();
 
     private:
         float& leftMotor;
@@ -45,7 +44,7 @@ class LineFollower {
         int& robotState;
 
         const float kp = 0.25; // In proportion of maximum power
-        const float basePower = 0.8; // Base power (before correction)
+        const float basePower = 0.9; // Base power (before correction)
 
         Stack dirStack = Stack();
         direction probeStateJ = NONE_D; // State for probe junction
@@ -59,17 +58,15 @@ class LineFollower {
         int followLine(int lineBinary);
 
         int turnLeft(int lineBinary);
-        int turnLeftT(int lineBinary);
         int turnRight(int lineBinary);
-        int turnRightT(int lineBinary);
         int turnAround(int lineBinary);
         int moveStraight(int lineBinary);
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
-        int probeSweep(int lineBinary);
         int probeEnd(int lineBinary);
         int checkTunnel(int lineBinary);
         int deliverBlock(int lineBinary);
+        int returnHome(int lineBinary);
 
         int printCounter = 0;
 

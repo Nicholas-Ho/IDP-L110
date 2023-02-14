@@ -66,8 +66,15 @@ Robot States:
 1 --> Startup sequence
 2 --> Line Following
 3 --> Returning home
+4 --> Home (Stopped)
 */
 int robotState = 0;
+
+//Return to starting box
+const long circuitDuration = 15000; //240000; // in milliseconds
+long endTime = 0;
+int turn_count = 0;
+const int turn_count_max = 50;
 
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, desiredDistance, haveBlock, colour, robotState);
@@ -126,7 +133,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      robotState = 2; // CHANGE BACK TO 1
+      robotState = 1; // CHANGE BACK TO 1
       break;
     }
     delay(50); 
@@ -150,6 +157,12 @@ void setup()
     leftMotor -> run(RELEASE);
     rightMotor -> run(RELEASE);
     robotState = 2;
+
+    //Start timer for going home;
+    endTime = millis() + circuitDuration;
+    Serial.print("Run will end at: ");
+    Serial.print(endTime);
+    Serial.println(" ms from boot.");
   }
   Serial.println("Robot is running.");
 }
@@ -159,8 +172,6 @@ int printCounter = 0;
 void loop() 
 {   
   String readingPrint = "";
-
-  //if(millis() - start >= 270000) {robotState = 3;}
 
   // LINE CONTROL
   // Read line sensors
@@ -175,12 +186,33 @@ void loop()
     Serial.println("Error: Line Readings not available");
     while(1);
   }
+  
+  
+  if(millis() >= endTime && robotState == 2) {
+    int lineBinary = lineReadings[0] * 8 + lineReadings[1] * 4 + lineReadings[2] * 2 + lineReadings[3];
+    if(lineBinary == 6) {
+      turn_count++;
+    } else {
+      turn_count = 0;
+    }
+    if(turn_count >= turn_count_max) {    
+      Serial.println("Returning home");
+      Serial.println(millis());
+      robotState = 3;
+      if(!haveBlock) { turnAroundArduino(); }
+    }
+  } else if(robotState == 4) { // Reached home
+    Serial.println("Home");
+    leftMotor->run(RELEASE);
+    rightMotor->run(RELEASE);
+    while(true); // Stop Robot
+  }
 
   if(!inTunnel) //set motor proportions based on line sensor input
   {
     controller.control(lineReadings); //left and right motor proportions are set now
-    // leftMotorProportion = 0;
-    // rightMotorProportion = 0;
+    // leftMotorProportion = 0.7;
+    // rightMotorProportion = 0.7;
   }
    else //set motor proportions based on ultrasonic input
    {
@@ -244,15 +276,6 @@ void loop()
 
   if(printCounter == 100) {
     // Serial.println(readingPrint);
-    // // Serial.println("Left Motor Proportion: ");
-    // // Serial.println(leftMotorProportion);
-    // // Serial.println("Right Motor Proportion: ");
-    // // Serial.println(rightMotorProportion);
-    // // Serial.println("Left Motor Speed:");
-    // // Serial.println(leftMotorSpeed);
-    // // Serial.println("Left Motor Sign: ");
-    // // Serial.println(leftSign);
-    // // Serial.println("\n");
     printCounter = 0;
   } else {
     printCounter++;    
@@ -261,8 +284,6 @@ void loop()
   //Setting the magnitude of the motor speeds
   leftMotor->setSpeed(leftMotorSpeed);
   rightMotor->setSpeed(rightMotorSpeed);
-  // leftMotor->setSpeed(100);
-  // rightMotor->setSpeed(100);
 
   //Using the sign of the motor proportion to set the direction of motion for each wheel
   switch(leftSign)
