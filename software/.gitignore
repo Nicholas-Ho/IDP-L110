@@ -68,3 +68,7 @@ avr-toolchain-*.zip
 manifest.mf
 nbbuild.xml
 nbproject
+
+**/output.csv
+
+.vscode
