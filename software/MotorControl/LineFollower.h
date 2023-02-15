@@ -30,8 +30,9 @@ class LineFollower {
 
     public:
         LineFollower(float &leftM, float &rightM, bool& tunnel, float& desired_dist, bool& block, Colour& col, int& state) : 
-        leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), desiredDistance(desired_dist), haveBlock(block), colour(col), robotState(state) {};
+          leftMotor(leftM), rightMotor(rightM), inTunnel(tunnel), desiredDistance(desired_dist), haveBlock(block), colour(col), robotState(state) {};
         int control(int lineReadings[4]);
+        int initialiseReturn();
 
     private:
         float& leftMotor;
@@ -42,6 +43,8 @@ class LineFollower {
         bool& haveBlock;
         Colour& colour;
         int& robotState;
+
+        int branchCounter = 1;
 
         const float kp = 0.25; // In proportion of maximum power
         const float kd = 10;
@@ -65,6 +68,7 @@ class LineFollower {
         int reverse(int lineBinary);
         int probeJunction(int lineBinary);
         int probeEnd(int lineBinary);
+        int probeSweep(int lineBinary);
         int checkTunnel(int lineBinary);
         int deliverBlock(int lineBinary);
         int returnHome(int lineBinary);

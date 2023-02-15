@@ -18,6 +18,7 @@ class CircularBuffer {
         int pop();
         int operator [](int i); // Override read operator to get buffer contents at index
         int resetFill(int resetValue=0);
+        int getSize();
 };
 
 #endif

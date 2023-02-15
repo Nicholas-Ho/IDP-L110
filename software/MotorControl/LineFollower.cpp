@@ -30,8 +30,6 @@ int LineFollower::control(int lineReadings[4])
 
 int LineFollower::pathfind()
 { // Function updates branchCounter and returns -1 if the turn is not to be taken, and 0 if it is
-
-  static int branchCounter = 1;
   int res = -1;
 
   if (!haveBlock && robotState == 2)
@@ -40,25 +38,23 @@ int LineFollower::pathfind()
   }
   else
   {
+    branchCounter--;
     switch (colour)
     {
     case Blue:
-      branchCounter--;
       if (branchCounter == 2)
       {
         res = 0;
       } // Green delivery area
       break;
     case Red:
-      branchCounter--;
       if (branchCounter == 0)
       {
         res = 0;
       } // Red delivery area
       break;
     default:
-      branchCounter--;
-      if(robotState == 3 && branchCounter == 0) //Indicates that we should turn into the home delivery box
+      if(robotState == 3 && branchCounter == 1) //Indicates that we should turn into the home delivery box
       {
         return 0;
       }
@@ -144,7 +140,7 @@ int LineFollower::followLine(int lineBinary)
   static int lastError = 0;
   int bufferSize = 20;
   static CircularBuffer previousErrors = CircularBuffer(bufferSize, true, 0);
-  const float sampleDelay = 100; //50 ms delay between error readings
+  const float sampleDelay = 50; //50 ms delay between error readings
   static long startTime = millis();
   static int previousError = 0;
 
@@ -210,6 +206,14 @@ int LineFollower::followLine(int lineBinary)
   return 0;
 }
 
+int LineFollower::initialiseReturn() {
+  Serial.println("Delivering block.");
+  if(dirStack.isEmpty()) {
+    Serial.println("On the main line, incrementing branch counter.");
+    branchCounter++;
+  }
+}
+
 int LineFollower::turnLeft(int _)
 {
   moveStraightArduino(75, 500);
@@ -252,9 +256,9 @@ int LineFollower::reverse(int _)
 int LineFollower::probeJunction(int lineBinary)
 {
   static int count = 0;
-  static const int max_count = 70;
+  static const int maxCount = 70;
 
-  if (count == max_count)
+  if (count == maxCount)
   {
     count = 0;
     int pathfindRes = -1;
@@ -262,7 +266,6 @@ int LineFollower::probeJunction(int lineBinary)
     {
       pathfindRes = pathfind();
       activeFunc = &moveStraight; // On left junction, we only want to count up or down, we never need to explore
-      dirStack.add(left);
     }
     else if (probeStateJ == right)
     {
@@ -319,30 +322,160 @@ int LineFollower::probeJunction(int lineBinary)
 
 int LineFollower::probeEnd(int lineBinary)
 {
+  activeFunc = &checkTunnel;
+  return 0;
+}
+
+// int LineFollower::probeSweep(int lineBinary)
+// {
+//   // State of the sweeping process
+//   static int sweepState = 0;
+//   // Sum of the binary values for line detection
+//   static int lineBinarySum = 0;
+//   // Counter for the number of times the sweep has happened
+//   static int count = 0;
+//   // Maximum number of sweeps to the left
+//   const int maxCountLeft = 50;
+//   // Maximum number of sweeps to the right
+//   const int maxCountRight = 100;
+
+//   switch (sweepState)
+//   {
+//   case 0: // First sweep to the left
+//   case 2: // Second sweep to the left
+//     if (count == maxCountLeft)
+//     {
+//       count = 0;
+
+//       if (lineBinarySum)
+//       {
+//         // If a line was detected, stop sweeping and reset binary sum
+//         activeFunc = nullptr;
+//         lineBinarySum = 0;
+//         return 0;
+//       }
+
+//       // If no line was detected, go to the next sweep state
+//       sweepState = (sweepState == 0) ? 1 : 0;
+//       activeFunc = nullptr;
+//       lineBinarySum = 0;
+//       turnAroundArduino();
+//       moveStraightArduino(75, 500);
+//       return 0;
+//     }
+
+//     // Move the motors left or right depending on the sweep state
+//     leftMotor = (sweepState == 0) ? -basePower : basePower;
+//     rightMotor = (sweepState == 0) ? basePower : -basePower;
+//     // Keep track of the binary sum
+//     lineBinarySum += lineBinary;
+//     // Increment the sweep count
+//     count++;
+//     break;
+
+//   case 1: // Sweep to the right
+//     if (count == maxCountRight)
+//     {
+//       if (lineBinarySum)
+//       {
+//         // If a line was detected, stop sweeping and reset binary sum
+//         activeFunc = nullptr;
+//         sweepState = 0;
+//         lineBinarySum = 0;
+//         return 0;
+//       }
+
+//       // If no line was detected, go back to the second sweep to the left
+//       count = 0;
+//       sweepState = 2;
+//       break;
+//     }
+
+//     // Move the motors right
+//     leftMotor = basePower;
+//     rightMotor = -basePower;
+//     // Keep track of the binary sum
+//     lineBinarySum += lineBinary;
+//     // Increment the sweep count
+//     count++;
+//     break;
+//   }
+
+//   activeFunc = &checkTunnel;
+
+//   return 0;
+// }
+
+int LineFollower::probeSweep(int lineBinary)
+{
+
+  /*
+  Sweep State 0 -> Sweep to the left
+  Sweep State 1 -> Sweep back to the right
+  */
+  // State of the sweeping process
+  static int sweepState = 0;
+  // Counter for the number of cycles the sweep has happened
   static int count = 0;
-  static const int max_count = 150;
+  // Maximum count
+  const int maxCount = 100;
+  //Number of 1's seen on line
+  static int lineCount = 0;
+  const int maxLineCount = 50;
 
-  if (count >= max_count)
-  { // No line, end of branch
-    count = 0;
-    activeFunc = &checkTunnel;
-
-    return 0;
-  }
-  else if (lineBinary != 0)
+  if(sweepState == 0) 
   {
-    count = 0;
-    activeFunc = nullptr; // Resume normal function
-    return 0;
-  }
-  else
-  {
-    leftMotor = 0.5;
-    rightMotor = 0.5;
+    if(count == maxCount)
+    {
+      count = 0;
+      sweepState = 1;
 
-    count++;
-    return 0;
+    }
+    else
+    {
+      count++;
+      if(lineBinary)  {lineCount++;}
+      if(lineCount > maxLineCount)
+      {
+        activeFunc = nullptr;
+        return 0;
+      }
+      leftMotor = -basePower;
+      rightMotor = basePower;
+    }    
   }
+
+  else if(sweepState == 1)
+  {
+    if(count == maxCount)
+    {
+      count = 0;
+      sweepState = 0;
+
+      if(lineCount > maxLineCount)
+      {
+        activeFunc = nullptr;
+      }
+      else 
+      {
+        activeFunc = &turnAround;
+      }
+
+      lineCount = 0;
+      return 0;
+    }
+    else 
+    {
+      count++;
+      if(lineBinary)  {lineCount++;}
+      leftMotor = basePower;
+      rightMotor = -basePower;
+    }    
+
+  }
+
+  return 0; 
+
 }
 
 int LineFollower::checkTunnel(int _) {
@@ -355,7 +488,7 @@ int LineFollower::checkTunnel(int _) {
       activeFunc = nullptr;
       return 0;
     } else {
-      activeFunc = &turnAround;
+      activeFunc = &probeSweep;
     }
     return -1;
 }
@@ -367,6 +500,8 @@ int LineFollower::deliverBlock(int _)
   reverseArduino(150, 3000);
   turnRightArduino();
   moveStraightArduino(75, 1000);
+  haveBlock = false;
+  colour = NONE_C;  
   activeFunc = nullptr;
   return 0;
 }
@@ -395,7 +530,7 @@ bool Stack::isEmpty()
 }
 
 int Stack::add(direction dir)
-{
+{  
   if (size < max_size)
   {
     stack[size] = dir;

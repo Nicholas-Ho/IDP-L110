@@ -149,7 +149,7 @@ void setup()
     rightMotor -> setSpeed(200);
     leftMotor -> run(FORWARD);
     rightMotor -> run(FORWARD);
-    delay(4900);
+    delay(4700);
 
     turnLeftArduino();
 
@@ -250,6 +250,7 @@ void loop()
       displayColour(colour);
       turnAroundArduino();
       moveStraightArduino(75, 500);
+      controller.initialiseReturn();
     }
   }
 
@@ -275,7 +276,7 @@ void loop()
   }
 
   if(printCounter == 100) {
-    Serial.println(readingPrint);
+    // Serial.println(readingPrint);
     printCounter = 0;
   } else {
     printCounter++;    
