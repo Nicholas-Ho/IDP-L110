@@ -70,7 +70,7 @@ int LineFollower::detectEnd(int lineBinary)
 {
   if (lineBinary == 0)
   {
-    activeFunc = &probeEnd;
+    activeFunc = &checkTunnel;
     return 0;
   }
 
@@ -265,6 +265,11 @@ int LineFollower::probeJunction(int lineBinary)
     if (probeStateJ == left)
     {
       pathfindRes = pathfind();
+      if(robotState == 3 && pathfindRes == 0)
+      {
+        activeFunc = &returnHome;
+        return 0; // Don't want to reset probeStateJ;
+      }
       activeFunc = &moveStraight; // On left junction, we only want to count up or down, we never need to explore
     }
     else if (probeStateJ == right)
@@ -273,6 +278,7 @@ int LineFollower::probeJunction(int lineBinary)
       if(robotState == 3 && pathfindRes == 0)
       {
         activeFunc = &returnHome;
+        return 0; // Don't want to reset probeStateJ;
       }
       else if (!haveBlock)
       {
@@ -325,86 +331,6 @@ int LineFollower::probeEnd(int lineBinary)
   activeFunc = &checkTunnel;
   return 0;
 }
-
-// int LineFollower::probeSweep(int lineBinary)
-// {
-//   // State of the sweeping process
-//   static int sweepState = 0;
-//   // Sum of the binary values for line detection
-//   static int lineBinarySum = 0;
-//   // Counter for the number of times the sweep has happened
-//   static int count = 0;
-//   // Maximum number of sweeps to the left
-//   const int maxCountLeft = 50;
-//   // Maximum number of sweeps to the right
-//   const int maxCountRight = 100;
-
-//   switch (sweepState)
-//   {
-//   case 0: // First sweep to the left
-//   case 2: // Second sweep to the left
-//     if (count == maxCountLeft)
-//     {
-//       count = 0;
-
-//       if (lineBinarySum)
-//       {
-//         // If a line was detected, stop sweeping and reset binary sum
-//         activeFunc = nullptr;
-//         lineBinarySum = 0;
-//         return 0;
-//       }
-
-//       // If no line was detected, go to the next sweep state
-//       sweepState = (sweepState == 0) ? 1 : 0;
-//       activeFunc = nullptr;
-//       lineBinarySum = 0;
-//       turnAroundArduino();
-//       moveStraightArduino(75, 500);
-//       return 0;
-//     }
-
-//     // Move the motors left or right depending on the sweep state
-//     leftMotor = (sweepState == 0) ? -basePower : basePower;
-//     rightMotor = (sweepState == 0) ? basePower : -basePower;
-//     // Keep track of the binary sum
-//     lineBinarySum += lineBinary;
-//     // Increment the sweep count
-//     count++;
-//     break;
-
-//   case 1: // Sweep to the right
-//     if (count == maxCountRight)
-//     {
-//       if (lineBinarySum)
-//       {
-//         // If a line was detected, stop sweeping and reset binary sum
-//         activeFunc = nullptr;
-//         sweepState = 0;
-//         lineBinarySum = 0;
-//         return 0;
-//       }
-
-//       // If no line was detected, go back to the second sweep to the left
-//       count = 0;
-//       sweepState = 2;
-//       break;
-//     }
-
-//     // Move the motors right
-//     leftMotor = basePower;
-//     rightMotor = -basePower;
-//     // Keep track of the binary sum
-//     lineBinarySum += lineBinary;
-//     // Increment the sweep count
-//     count++;
-//     break;
-//   }
-
-//   activeFunc = &checkTunnel;
-
-//   return 0;
-// }
 
 int LineFollower::probeSweep(int lineBinary)
 {
@@ -498,17 +424,27 @@ int LineFollower::deliverBlock(int _)
   turnRightArduino();
   moveStraightArduino(150, 3000);
   reverseArduino(150, 3000);
-  turnRightArduino();
-  moveStraightArduino(75, 1000);
+  if(colour == Red) {
+    branchCounter += 2;
+    turnRightArduino();
+  } else {
+    turnLeftArduino();
+  }
+  moveStraightArduino(90, 1000);
   haveBlock = false;
   colour = NONE_C;  
   activeFunc = nullptr;
+  robotState = 3;
   return 0;
 }
 
 int LineFollower::returnHome(int _)
 {
-  turnRightArduino();
+  if(probeStateJ == left) {
+    turnLeftArduino();
+  } else {
+    turnRightArduino();
+  }
   moveStraightArduino(150, 6000);
   robotState = 4;
   activeFunc = nullptr;

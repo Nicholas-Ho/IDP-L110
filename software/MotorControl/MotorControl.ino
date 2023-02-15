@@ -70,12 +70,6 @@ Robot States:
 */
 int robotState = 0;
 
-//Return to starting box
-const long circuitDuration = 240000; // in milliseconds
-long endTime = 0;
-int turn_count = 0;
-const int turn_count_max = 50;
-
 //Instantiate a controller object, passing in references to the left and right motor objects
 LineFollower controller = LineFollower(leftMotorProportion, rightMotorProportion, inTunnel, desiredDistance, haveBlock, colour, robotState);
 
@@ -157,12 +151,6 @@ void setup()
     leftMotor -> run(RELEASE);
     rightMotor -> run(RELEASE);
     robotState = 2;
-
-    //Start timer for going home;
-    endTime = millis() + circuitDuration;
-    Serial.print("Run will end at: ");
-    Serial.print(endTime);
-    Serial.println(" ms from boot.");
   }
   Serial.println("Robot is running.");
 }
@@ -187,21 +175,7 @@ void loop()
     while(1);
   }
   
-  // Check for homebound
-  if(millis() >= endTime && robotState == 2) {
-    int lineBinary = lineReadings[0] * 8 + lineReadings[1] * 4 + lineReadings[2] * 2 + lineReadings[3];
-    if(lineBinary == 6) {
-      turn_count++;
-    } else {
-      turn_count = 0;
-    }
-    if(turn_count >= turn_count_max) {    
-      Serial.println("Returning home");
-      Serial.println(millis());
-      robotState = 3;
-      if(!haveBlock) { turnAroundArduino(); }
-    }
-  } else if(robotState == 4) { // Reached home
+  if(robotState == 4) { // Reached home
     Serial.println("Home");
     leftMotor->run(RELEASE);
     rightMotor->run(RELEASE);
