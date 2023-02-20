@@ -4,8 +4,13 @@
 #include "circular_buffer.h"
 #include <Arduino.h>
 
+// For clarity
 enum Colour {NONE_C, Blue, Red, ERROR_C};
 
+// Class implementing colour detection logic
+// If the colour detection algorithm is activated, compare the analog input from the colour detector circuit to the value a set time ago
+// If there is a significant increase, the block is blue
+// If there is no increase after a set timeout, the block is red
 class ColourDetector {
     private:
         // State 0: Dormant

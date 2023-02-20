@@ -1,5 +1,6 @@
 #include "ColourDetector.h"
 
+// To ensure that the algorithm cannot be initialised when it is already initialised
 void ColourDetector::initialiseDetector() {
   if(state == 0) { // Ensure no interruptions
     Serial.println("Initialising...");
@@ -29,7 +30,7 @@ Colour ColourDetector::detectColour(int sensorVal) {
 
         pastSamples.add(sensorVal);
 
-        if(sensorVal - prevVal >= blueThreshold) {
+        if(sensorVal - prevVal >= blueThreshold) { // If the current value exceeds the previous value by the threshold, block is blue
           Serial.println("Blue!");
           state = 0;
           counter = 0; // Reset counter (just in case)
@@ -40,7 +41,7 @@ Colour ColourDetector::detectColour(int sensorVal) {
             Serial.print(counter/100);
             Serial.println(" seconds");
           }
-          if(counter >= counterThresh) {
+          if(counter >= counterThresh) { // If the algorithm times out, the block is red
             Serial.println("Red!");
             state = 0;
             counter = 0; // Reset counter (just in case)

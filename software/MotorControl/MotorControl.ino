@@ -127,7 +127,7 @@ void setup()
     buttonPressed = digitalRead(buttonPin); //Break out of loop if we read LOW on buttonPin 
     if(buttonPressed == HIGH)
     {
-      robotState = 1; // CHANGE BACK TO 1
+      robotState = 1;
       break;
     }
     delay(50); 
@@ -136,8 +136,7 @@ void setup()
   Serial.println("Starting....");
 
   if(robotState == 1)
-  {
-    //long start = millis();             
+  {         
     //Run forward
     leftMotor-> setSpeed(200);
     rightMotor -> setSpeed(200);
@@ -145,6 +144,7 @@ void setup()
     rightMotor -> run(FORWARD);
     delay(4700);
 
+    // Turn left
     turnLeftArduino();
 
     //Stop  
@@ -194,7 +194,7 @@ void loop()
       tunnelControl(leftMotorProportion, rightMotorProportion);    
    }
 
-  // ULTRASONIC
+  // ULTRASONIC PROXIMITY SENSOR
   long currMillis = millis();
   if(currMillis - prevMillis >= uSonicInterval) {
     if(!haveBlock) {
@@ -203,7 +203,7 @@ void loop()
         // Nothing
       } else if(dist <= 3) {
         // Something is within 3 cm
-        detector.initialiseDetector();
+        detector.initialiseDetector(); // Initialise colour detection algorithm
         leftMotorProportion /= slowRatio;
         rightMotorProportion /= slowRatio;
       } else if(dist <= 6) {
@@ -219,9 +219,9 @@ void loop()
   colourSensorVal = analogRead(colourPinIn);
 
   if(!haveBlock) {
-    colour = detector.detectColour(colourSensorVal);
+    colour = detector.detectColour(colourSensorVal); // Call the colour detection algorithm
     if(colour == Blue || colour == Red) {
-      displayColour(colour);
+      displayColour(colour); // Stop and display the colour
       turnAroundArduino();
       moveStraightArduino(75, 500);
       controller.initialiseReturn();
@@ -241,6 +241,7 @@ void loop()
   int rightMotorSpeed = (int) (fabs(rightMotorProportion)*maxPower); 
 
   // BLINKY
+  // Provide power to the timer-LED if the motors are spinning
   if(leftMotorProportion == 0 && rightMotorProportion == 0 && blinkyState == true) {
     digitalWrite(blinkyPin, LOW);
     blinkyState = false;
@@ -249,6 +250,7 @@ void loop()
     blinkyState = true;
   }
 
+  // Debugging (most useful bit of code the entire project)
   if(printCounter == 100) {
     // Serial.println(readingPrint);
     printCounter = 0;
@@ -295,16 +297,20 @@ void loop()
 
 }
 
+// ULTRASONIC TUNNEL CONTROL
 void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 { 
   const static int interval = 100;
   static long tunnelMillis = 0;
+
+  // Check if the line has been found again. If counter exceeds counter_max, line has been found
   static int counter = 0;                                                                                                       
   const static int counter_max = 100;
+
   const float basePower = 0.75;
   
   float distance = NO_ECHO;
-  float kp = 0.2;
+  float kp = 0.2; // Proportional gain
 
   if(millis() - tunnelMillis >= interval) {
     distance = getTunnelDistance();
@@ -313,6 +319,7 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
 
     float error = distance - desiredDistance;
 
+    // Proportional control
     leftMotorProportion = basePower;
     rightMotorProportion = basePower;
     leftMotorProportion -= kp*error;
@@ -331,13 +338,14 @@ void tunnelControl(float& leftMotorProportion, float& rightMotorProportion)
   } else {
     counter = 0;
   }
-  if(counter >= counter_max) {
+  if(counter >= counter_max) { // Line readings have been nonzero for 100 cycles
     Serial.println("Out of tunnel");
     inTunnel = false;
     counter = 0;
   } 
 }
 
+// Utility function for getting distance from the side wall (from side-mounted ultrasonic)
 float getTunnelDistance() {
   float distance = NO_ECHO;
   float time = sonarTunnel.ping() * 1e-6; //time in seconds
@@ -396,6 +404,7 @@ void reverseArduino(int speed, int delayTime)
   
 }
 
+// Display detected colour
 void displayColour(Colour col) {
   haveBlock = true;
 

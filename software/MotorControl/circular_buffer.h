@@ -3,8 +3,9 @@
 
 #define ARRAY_SIZE 200
 
+// Utility FIFO Queue implementation
+// Used for Colour Detection and Derivative Control Line Following
 class CircularBuffer {
-    // FIFO Queue
     private:
         int buffer[ARRAY_SIZE] = { 0 };
         int firstIndex = 0; // Index of first element
